@@ -1679,20 +1679,15 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Regulator_Linear:AMS1117-3.3"
+		(symbol "Regulator_Linear:AP2112K-3.3"
+			(pin_names
+				(offset 0.254)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
 			(property "Reference" "U"
-				(at -3.81 3.175 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Value" "AMS1117-3.3"
-				(at 0 3.175 0)
+				(at -5.08 5.715 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -1700,8 +1695,17 @@
 					(justify left)
 				)
 			)
-			(property "Footprint" "Package_TO_SOT_SMD:SOT-223-3_TabPin2"
-				(at 0 5.08 0)
+			(property "Value" "AP2112K-3.3"
+				(at 0 5.715 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Footprint" "Package_TO_SOT_SMD:SOT-23-5"
+				(at 0 8.255 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -1709,8 +1713,8 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "http://www.advanced-monolithic.com/pdf/ds1117.pdf"
-				(at 2.54 -6.35 0)
+			(property "Datasheet" "https://www.diodes.com/assets/Datasheets/AP2112.pdf"
+				(at 0 2.54 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -1718,7 +1722,7 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "1A Low Dropout regulator, positive, 3.3V fixed output, SOT-223"
+			(property "Description" "600mA low dropout linear regulator, with enable pin, 3.8V-6V input voltage range, 3.3V fixed positive output, SOT-23-5"
 				(at 0 0 0)
 				(effects
 					(font
@@ -1736,7 +1740,7 @@
 					(hide yes)
 				)
 			)
-			(property "ki_fp_filters" "SOT?223*TabPin2*"
+			(property "ki_fp_filters" "SOT?23?5*"
 				(at 0 0 0)
 				(effects
 					(font
@@ -1745,10 +1749,10 @@
 					(hide yes)
 				)
 			)
-			(symbol "AMS1117-3.3_0_1"
+			(symbol "AP2112K-3.3_0_1"
 				(rectangle
-					(start -5.08 -5.08)
-					(end 5.08 1.905)
+					(start -5.08 4.445)
+					(end 5.08 -5.08)
 					(stroke
 						(width 0.254)
 						(type default)
@@ -1758,11 +1762,29 @@
 					)
 				)
 			)
-			(symbol "AMS1117-3.3_1_1"
+			(symbol "AP2112K-3.3_1_1"
 				(pin power_in line
+					(at -7.62 2.54 0)
+					(length 2.54)
+					(name "VIN"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
 					(at -7.62 0 0)
 					(length 2.54)
-					(name "VI"
+					(name "EN"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -1787,7 +1809,26 @@
 							)
 						)
 					)
-					(number "1"
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin no_connect line
+					(at 5.08 0 180)
+					(length 2.54)
+					(hide yes)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -1796,16 +1837,16 @@
 					)
 				)
 				(pin power_out line
-					(at 7.62 0 180)
+					(at 7.62 2.54 180)
 					(length 2.54)
-					(name "VO"
+					(name "VOUT"
 						(effects
 							(font
 								(size 1.27 1.27)
 							)
 						)
 					)
-					(number "2"
+					(number "5"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -2726,6 +2767,18 @@
 		(uuid "c05f1f72-2ec2-4859-ae56-7469bd18644a")
 	)
 	(junction
+		(at 53.34 63.5)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "c5d7dda1-7ce5-4236-b050-6ce12fd76a70")
+	)
+	(junction
+		(at 100.33 123.19)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "c7ca2664-9a59-4989-8ddb-5d394a3bb011")
+	)
+	(junction
 		(at 95.25 90.17)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -2791,27 +2844,7 @@
 	)
 	(wire
 		(pts
-			(xy 53.34 48.26) (xy 53.34 60.96)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "07b4e99a-3525-4fbc-9e2e-07bf9c367ab6")
-	)
-	(wire
-		(pts
-			(xy 53.34 60.96) (xy 53.34 130.81)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "0d98fdd7-3104-44ec-a6c1-466eb9ed6ca9")
-	)
-	(wire
-		(pts
-			(xy 90.17 60.96) (xy 95.25 60.96)
+			(xy 88.9 60.96) (xy 95.25 60.96)
 		)
 		(stroke
 			(width 0)
@@ -2838,16 +2871,6 @@
 			(type default)
 		)
 		(uuid "13281c09-6013-40c2-a2af-1e39957ac212")
-	)
-	(wire
-		(pts
-			(xy 97.79 123.19) (xy 102.87 123.19)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "139674d7-d4ad-4175-b954-e4a33b3fbafe")
 	)
 	(wire
 		(pts
@@ -3011,6 +3034,16 @@
 	)
 	(wire
 		(pts
+			(xy 100.33 123.19) (xy 102.87 123.19)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "31172885-88bf-412f-87e1-b400755d650d")
+	)
+	(wire
+		(pts
 			(xy 199.39 95.25) (xy 199.39 93.98)
 		)
 		(stroke
@@ -3101,6 +3134,16 @@
 	)
 	(wire
 		(pts
+			(xy 72.39 71.12) (xy 72.39 142.24)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "41ed0809-6694-4bcf-af20-d4837dad8e50")
+	)
+	(wire
+		(pts
 			(xy 143.51 107.95) (xy 143.51 114.3)
 		)
 		(stroke
@@ -3131,6 +3174,16 @@
 	)
 	(wire
 		(pts
+			(xy 53.34 63.5) (xy 64.77 63.5)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "520dd101-554a-4047-bcfe-2ae9fb819db3")
+	)
+	(wire
+		(pts
 			(xy 138.43 72.39) (xy 138.43 142.24)
 		)
 		(stroke
@@ -3138,6 +3191,16 @@
 			(type default)
 		)
 		(uuid "57799355-406f-41fa-8e52-a5cd4238ee62")
+	)
+	(wire
+		(pts
+			(xy 53.34 63.5) (xy 53.34 60.96)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "58e1ec69-cce0-4b6c-a3fe-be5d673a2202")
 	)
 	(wire
 		(pts
@@ -3208,16 +3271,6 @@
 			(type default)
 		)
 		(uuid "5f645763-4f7b-461b-b4b2-11fd0315d591")
-	)
-	(wire
-		(pts
-			(xy 72.39 68.58) (xy 72.39 142.24)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "63d58af0-943d-4f62-91f5-da80d2938aca")
 	)
 	(wire
 		(pts
@@ -3371,7 +3424,7 @@
 	)
 	(wire
 		(pts
-			(xy 100.33 120.65) (xy 100.33 142.24)
+			(xy 100.33 120.65) (xy 100.33 123.19)
 		)
 		(stroke
 			(width 0)
@@ -3398,6 +3451,16 @@
 			(type default)
 		)
 		(uuid "93a2a04d-5b14-47bc-bfc2-c504ac3043cf")
+	)
+	(wire
+		(pts
+			(xy 97.79 123.19) (xy 100.33 123.19)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "94e16122-a69a-48f7-9af6-e80b38e3c186")
 	)
 	(wire
 		(pts
@@ -3428,6 +3491,16 @@
 			(type default)
 		)
 		(uuid "999816a1-e859-45f0-96fe-464b93d54148")
+	)
+	(wire
+		(pts
+			(xy 100.33 123.19) (xy 100.33 142.24)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9a4cfb88-b0a2-4b76-9537-6427b34a8fb0")
 	)
 	(wire
 		(pts
@@ -3471,6 +3544,16 @@
 	)
 	(wire
 		(pts
+			(xy 53.34 48.26) (xy 53.34 60.96)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a7418f55-77dc-42eb-a73c-a0b2008fc134")
+	)
+	(wire
+		(pts
 			(xy 142.24 142.24) (xy 153.67 142.24)
 		)
 		(stroke
@@ -3511,7 +3594,7 @@
 	)
 	(wire
 		(pts
-			(xy 80.01 60.96) (xy 82.55 60.96)
+			(xy 80.01 60.96) (xy 81.28 60.96)
 		)
 		(stroke
 			(width 0)
@@ -3611,16 +3694,6 @@
 	)
 	(wire
 		(pts
-			(xy 142.24 48.26) (xy 142.24 53.34)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "cfdc9e43-9b90-4e8d-b6c0-1aa6827c4c8e")
-	)
-	(wire
-		(pts
 			(xy 113.03 135.89) (xy 184.15 135.89)
 		)
 		(stroke
@@ -3701,6 +3774,16 @@
 	)
 	(wire
 		(pts
+			(xy 53.34 63.5) (xy 53.34 130.81)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f2c2cdaf-5e70-451a-8010-ae84c5f1bcaf")
+	)
+	(wire
+		(pts
 			(xy 143.51 99.06) (xy 143.51 100.33)
 		)
 		(stroke
@@ -3759,7 +3842,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "00a3499e-fcd3-4011-b2ce-0f70293baba8")
-		(property "Reference" "J3"
+		(property "Reference" "A2"
 			(at 86.995 96.52 0)
 			(effects
 				(font
@@ -3775,7 +3858,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"
 			(at 86.36 101.6 0)
 			(effects
 				(font
@@ -3811,7 +3894,7 @@
 		(instances
 			(project "SplitFlap"
 				(path "/a27c2069-9cb4-4119-a6b4-dc99fc554c69"
-					(reference "J3")
+					(reference "A2")
 					(unit 1)
 				)
 			)
@@ -4165,7 +4248,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "2187ece1-3c29-498b-896b-3abab47ac5c0")
-		(property "Reference" "J2"
+		(property "Reference" "A0"
 			(at 86.995 73.66 0)
 			(effects
 				(font
@@ -4181,7 +4264,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"
 			(at 86.36 78.74 0)
 			(effects
 				(font
@@ -4217,7 +4300,7 @@
 		(instances
 			(project "SplitFlap"
 				(path "/a27c2069-9cb4-4119-a6b4-dc99fc554c69"
-					(reference "J2")
+					(reference "A0")
 					(unit 1)
 				)
 			)
@@ -4225,7 +4308,7 @@
 	)
 	(symbol
 		(lib_id "Device:C")
-		(at 86.36 60.96 90)
+		(at 85.09 60.96 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -4234,23 +4317,23 @@
 		(fields_autoplaced yes)
 		(uuid "244b6844-6521-42e1-b346-2dcb85be64da")
 		(property "Reference" "C3"
-			(at 86.36 53.34 90)
+			(at 85.09 53.34 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
 		)
-		(property "Value" "0.1 µF"
-			(at 86.36 55.88 90)
+		(property "Value" "1 µF"
+			(at 85.09 55.88 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
-			(at 90.17 59.9948 0)
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
+			(at 88.9 59.9948 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4259,7 +4342,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 86.36 60.96 0)
+			(at 85.09 60.96 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4267,8 +4350,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Bypass capacitor, keeps the voltage stable during power-on"
-			(at 86.36 60.96 0)
+		(property "Description" "Used for stability of the AP2112K"
+			(at 85.09 60.96 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4276,8 +4359,8 @@
 				(hide yes)
 			)
 		)
-		(property "MPN" "C6955083"
-			(at 86.36 60.96 0)
+		(property "MPN" "C1592"
+			(at 85.09 60.96 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4453,86 +4536,6 @@
 			(project ""
 				(path "/a27c2069-9cb4-4119-a6b4-dc99fc554c69"
 					(reference "C1")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Regulator_Linear:AMS1117-3.3")
-		(at 72.39 60.96 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "44fe5eff-22de-407f-85d1-38ab3edd5b6c")
-		(property "Reference" "U3"
-			(at 72.39 54.61 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "AMS1117-3.3"
-			(at 72.39 57.15 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Package_TO_SOT_SMD:SOT-223-3_TabPin2"
-			(at 72.39 55.88 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "http://www.advanced-monolithic.com/pdf/ds1117.pdf"
-			(at 74.93 67.31 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "1A Low Dropout regulator, positive, 3.3V fixed output, SOT-223"
-			(at 72.39 60.96 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "MPN" "C347222"
-			(at 72.39 60.96 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "3"
-			(uuid "4c30d23e-2dcd-40b9-a5cc-78c76ca95d89")
-		)
-		(pin "1"
-			(uuid "059fb2f5-74d5-465a-9fab-b09a8478adb0")
-		)
-		(pin "2"
-			(uuid "67a1955c-06cc-41bd-81e6-76b511f1e5ba")
-		)
-		(instances
-			(project ""
-				(path "/a27c2069-9cb4-4119-a6b4-dc99fc554c69"
-					(reference "U3")
 					(unit 1)
 				)
 			)
@@ -4870,7 +4873,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "78b87887-5b9c-447b-ad07-281b18556e0a")
-		(property "Reference" "J1"
+		(property "Reference" "A1"
 			(at 86.995 85.09 0)
 			(effects
 				(font
@@ -4886,7 +4889,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"
 			(at 86.36 90.17 0)
 			(effects
 				(font
@@ -4922,7 +4925,7 @@
 		(instances
 			(project ""
 				(path "/a27c2069-9cb4-4119-a6b4-dc99fc554c69"
-					(reference "J1")
+					(reference "A1")
 					(unit 1)
 				)
 			)
@@ -5233,7 +5236,7 @@
 				)
 			)
 		)
-		(property "Value" "0.1 µF"
+		(property "Value" "1 µF"
 			(at 59.69 55.88 90)
 			(effects
 				(font
@@ -5241,7 +5244,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 63.5 59.9948 0)
 			(effects
 				(font
@@ -5259,7 +5262,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Bypass capacitor, keeps the voltage stable during power-on"
+		(property "Description" "Used for stability of the AP2112K"
 			(at 59.69 60.96 0)
 			(effects
 				(font
@@ -5268,7 +5271,7 @@
 				(hide yes)
 			)
 		)
-		(property "MPN" "C6955083"
+		(property "MPN" "C1592"
 			(at 59.69 60.96 0)
 			(effects
 				(font
@@ -5524,6 +5527,83 @@
 			(project "SplitFlap"
 				(path "/a27c2069-9cb4-4119-a6b4-dc99fc554c69"
 					(reference "PULL_UP5")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Regulator_Linear:AP2112K-3.3")
+		(at 72.39 63.5 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "d3053727-18a5-468a-86d5-253787aaa599")
+		(property "Reference" "U4"
+			(at 72.39 54.61 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "AP2112K-3.3"
+			(at 72.39 57.15 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-23-5"
+			(at 72.39 55.245 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://www.diodes.com/assets/Datasheets/AP2112.pdf"
+			(at 72.39 60.96 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "600mA low dropout linear regulator, with enable pin, 3.8V-6V input voltage range, 3.3V fixed positive output, SOT-23-5"
+			(at 72.39 63.5 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "cfc3f91b-1139-4202-a505-1efbfb05f38f")
+		)
+		(pin "5"
+			(uuid "05b441ac-9994-42d3-be4e-1289913ebdce")
+		)
+		(pin "3"
+			(uuid "a50a08a6-477b-46f2-be0f-86c74d5276fb")
+		)
+		(pin "2"
+			(uuid "98a47614-ecf4-4235-8fb9-9bf5a4bb2bb1")
+		)
+		(pin "4"
+			(uuid "ebd3637d-8bb1-4d58-94bb-5523444c1ba4")
+		)
+		(instances
+			(project ""
+				(path "/a27c2069-9cb4-4119-a6b4-dc99fc554c69"
+					(reference "U4")
 					(unit 1)
 				)
 			)
