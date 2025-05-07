@@ -3885,6 +3885,15 @@
 				(hide yes)
 			)
 		)
+		(property "MPN" "C124375"
+			(at 86.36 101.6 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "2"
 			(uuid "de795c29-0dee-4206-b128-3af3f107b0f6")
 		)
@@ -4283,6 +4292,15 @@
 			)
 		)
 		(property "Description" "Generic connector, single row, 01x02, script generated"
+			(at 86.36 78.74 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "C124375"
 			(at 86.36 78.74 0)
 			(effects
 				(font
@@ -4908,6 +4926,15 @@
 			)
 		)
 		(property "Description" "Generic connector, single row, 01x02, script generated"
+			(at 86.36 90.17 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "C124375"
 			(at 86.36 90.17 0)
 			(effects
 				(font
@@ -5577,6 +5604,15 @@
 			)
 		)
 		(property "Description" "600mA low dropout linear regulator, with enable pin, 3.8V-6V input voltage range, 3.3V fixed positive output, SOT-23-5"
+			(at 72.39 63.5 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "C51118"
 			(at 72.39 63.5 0)
 			(effects
 				(font
