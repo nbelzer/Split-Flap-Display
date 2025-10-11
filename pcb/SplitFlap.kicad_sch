@@ -3800,7 +3800,7 @@
 				(hide yes)
 			)
 		)
-		(property "MPN" "C23162"
+		(property "MPN" "C4190"
 			(at 165.1 68.58 0)
 			(effects
 				(font
@@ -4151,7 +4151,7 @@
 				(hide yes)
 			)
 		)
-		(property "MPN" "C73809"
+		(property "MPN" "C25600"
 			(at 97.79 116.84 0)
 			(effects
 				(font
@@ -4309,7 +4309,7 @@
 				(hide yes)
 			)
 		)
-		(property "MPN" "C73809"
+		(property "MPN" "C25600"
 			(at 100.33 116.84 0)
 			(effects
 				(font
@@ -4388,7 +4388,7 @@
 				(hide yes)
 			)
 		)
-		(property "MPN" "C23162"
+		(property "MPN" "C4190"
 			(at 160.02 68.58 0)
 			(effects
 				(font
@@ -4438,7 +4438,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Connector_JST:JST_PH_B4B-PH-K_1x04_P2.00mm_Vertical"
+		(property "Footprint" "Connector_PinSocket_2.54mm:PinSocket_1x04_P2.54mm_Horizontal"
 			(at 189.23 130.81 0)
 			(effects
 				(font
@@ -4465,7 +4465,7 @@
 				(hide yes)
 			)
 		)
-		(property "MPN" "C2321"
+		(property "MPN" "C6297769"
 			(at 189.23 130.81 0)
 			(effects
 				(font
@@ -4710,7 +4710,7 @@
 				(hide yes)
 			)
 		)
-		(property "MPN" "C23162"
+		(property "MPN" "C4190"
 			(at 157.48 68.58 0)
 			(effects
 				(font
@@ -5155,7 +5155,7 @@
 				(hide yes)
 			)
 		)
-		(property "MPN" "C73809"
+		(property "MPN" "C25600"
 			(at 102.87 116.84 0)
 			(effects
 				(font
@@ -5234,6 +5234,15 @@
 				(hide yes)
 			)
 		)
+		(property "MPN" "C7501594"
+			(at 100.33 69.85 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "fe4b79a3-68c9-49f1-a7aa-cee2c02e0e11")
 		)
@@ -5286,7 +5295,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Connector_JST:JST_PH_B4B-PH-K_1x04_P2.00mm_Vertical"
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Horizontal"
 			(at 69.85 130.81 0)
 			(effects
 				(font
@@ -5313,7 +5322,7 @@
 				(hide yes)
 			)
 		)
-		(property "MPN" "C2321"
+		(property "MPN" "C22438278"
 			(at 69.85 130.81 0)
 			(effects
 				(font
@@ -5398,7 +5407,7 @@
 				(hide yes)
 			)
 		)
-		(property "MPN" "C23162"
+		(property "MPN" "C4190"
 			(at 162.56 68.58 0)
 			(effects
 				(font
