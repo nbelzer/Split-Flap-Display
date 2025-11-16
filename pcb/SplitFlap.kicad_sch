@@ -4286,7 +4286,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "1a64afd1-429f-469f-8273-370c9d624001")
-		(property "Reference" "DATA_PULLUP_JUMPER1"
+		(property "Reference" "PU1"
 			(at 114.3 52.0699 90)
 			(effects
 				(font
@@ -4340,7 +4340,7 @@
 		(instances
 			(project ""
 				(path "/a27c2069-9cb4-4119-a6b4-dc99fc554c69"
-					(reference "DATA_PULLUP_JUMPER1")
+					(reference "PU1")
 					(unit 1)
 				)
 			)

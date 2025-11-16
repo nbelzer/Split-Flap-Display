@@ -2390,7 +2390,7 @@
 		(at 158.75 81.9 -90)
 		(descr "SMD Solder Jumper, 1x1.5mm, rounded Pads, 0.3mm gap, open")
 		(tags "solder jumper open")
-		(property "Reference" "DATA_PULLUP_JUMPER1"
+		(property "Reference" "PU1"
 			(at -0.15 1.75 90)
 			(layer "F.SilkS")
 			(uuid "544cc050-edd3-46d3-a89e-061ab3d13232")
