@@ -4,28 +4,28 @@
 #include <sstream>
 
 String JsonSettings::getString(const char *key) {
-    preferences.begin(name, true);
+    preferences.begin(name, false);
     String value = preferences.getString(key, this->find(key).strDefault);
     preferences.end();
     return value;
 }
 
 int JsonSettings::getInt(const char *key) {
-    preferences.begin(name, true);
+    preferences.begin(name, false);
     int value = preferences.getInt(key, this->find(key).intDefault);
     preferences.end();
     return value;
 }
 
 float JsonSettings::getFloat(const char *key) {
-    preferences.begin(name, true);
+    preferences.begin(name, false);
     float value = preferences.getFloat(key, this->find(key).floatDefault);
     preferences.end();
     return value;
 }
 
 std::vector<int> JsonSettings::getIntVector(const char *key) {
-    preferences.begin(name, true);
+    preferences.begin(name, false);
     String value = preferences.getString(key, this->find(key).strDefault);
     preferences.end();
 
@@ -76,7 +76,7 @@ void JsonSettings::putIntVector(const char *key, std::vector<int> value) {
 JsonDocument JsonSettings::toJson() {
     JsonDocument settings;
 
-    preferences.begin(name, true);
+    preferences.begin(name, false);
 
     for (const auto &pair : map) {
         const String &key = pair.first;
@@ -108,6 +108,7 @@ bool JsonSettings::fromJson(JsonDocument settings) {
         if (! setting.validate(kv.value().as<String>())) {
             lastValidationError = setting.getLastValidationError();
             lastValidationKey = String(key);
+            preferences.end();
             return false;
         }
 

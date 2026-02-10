@@ -5,6 +5,7 @@ SplitFlapMqtt::SplitFlapMqtt(JsonSettings &settings, WiFiClient &wifiClient)
 
 void SplitFlapMqtt::setup() {
     mqttServer = settings.getString("mqtt_server");
+    mqttServer.trim();
     mqttPort = settings.getInt("mqtt_port");
     mqttUser = settings.getString("mqtt_user");
     mqttPass = settings.getString("mqtt_pass");
@@ -17,6 +18,11 @@ void SplitFlapMqtt::setup() {
     topic_avail = "splitflap/" + mdns + "/availability";
     topic_config_text = "homeassistant/text/splitflap_text_" + mdns + "/config";
     topic_config_sensor = "homeassistant/sensor/splitflap_sensor_" + mdns + "/config";
+
+    if (mqttServer.isEmpty()) {
+        Serial.println("[MQTT] Disabled: mqtt_server is empty");
+        return;
+    }
 
     mqttClient.setServer(mqttServer.c_str(), mqttPort);
     mqttClient.setCallback([this](char *topic, byte *payload, unsigned int length) {
@@ -35,6 +41,10 @@ void SplitFlapMqtt::setup() {
 }
 
 void SplitFlapMqtt::connectToMqtt() {
+    if (mqttServer.isEmpty()) {
+        return;
+    }
+
     if (! mqttClient.connected()) {
         Serial.println("[MQTT] Attempting to connect...");
         String clientId = "SplitFlap-" + settings.getString("mdns");

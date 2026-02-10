@@ -140,6 +140,29 @@
             <h2
                 class="text-xl font-semibold text-left w-full border-b border-gray-600 pb-2 mt-6 mb-4"
             >
+                Endpoint Fetch Mode
+            </h2>
+
+            <label for="fetchEndpoint" class="block text-left text-lg mt-4"
+                >Fetch Endpoint URL</label
+            >
+            <input
+                class="w-full p-3 mt-2 text-lg border border-gray-600 rounded-md text-center bg-gray-700 text-gray-100"
+                type="text"
+                id="fetchEndpoint"
+                x-model="settings.fetchEndpoint"
+                placeholder="https://example.com/value"
+            />
+            <div
+                class="w-full p-3 mt-2 text-sm text-white bg-red-500 rounded-md"
+                x-cloak
+                x-show="errors.key === 'fetchEndpoint'"
+                x-text="errors.message"
+            ></div>
+
+            <h2
+                class="text-xl font-semibold text-left w-full border-b border-gray-600 pb-2 mt-6 mb-4"
+            >
                 Wi-Fi Settings
             </h2>
 
