@@ -10,6 +10,7 @@
 #include "SplitFlapWebServer.h"
 
 #include <Arduino.h>
+#include <time.h>
 #include <WiFiClient.h>
 #include <WiFiClientSecure.h>
 
@@ -52,7 +53,7 @@ SplitFlapMqtt splitflapMqtt(settings, wifiClient);
 
 unsigned long lastFetchRequestTime = 0;
 int lastActiveMode = -1;
-const unsigned long FETCH_MODE_REQUEST_INTERVAL_MS = 5000;
+const unsigned long FETCH_MODE_REQUEST_INTERVAL_MS = 60000;
 
 void setup() {
     // put your setup code here, to run once:
@@ -273,6 +274,19 @@ String normalizeFetchDisplayText(String input, int charsetSize) {
 
     output.trim();
     return output;
+}
+
+bool isWithinWorkingHours() {
+    struct tm timeinfo;
+    if (! getLocalTime(&timeinfo)) {
+        Serial.println("Fetch mode could not read current time; skipping working-hours gate.");
+        return true;
+    }
+
+    const int startMinutes = (8 * 60) + 45;
+    const int endMinutes = (17 * 60) + 15;
+    const int currentMinutes = (timeinfo.tm_hour * 60) + timeinfo.tm_min;
+    return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
 }
 
 bool parseEndpointUrl(const String &endpoint, bool &useTls, String &host, int &port, String &path) {
@@ -575,6 +589,15 @@ bool fetchEndpointText(const String &endpoint, String &responseText) {
 
 void endpointFetchMode() {
     if (WiFi.status() != WL_CONNECTED) {
+        return;
+    }
+
+    if (! isWithinWorkingHours()) {
+        if (webServer.getWrittenString() != "") {
+            Serial.println("Fetch mode outside working hours (08:45-17:15), clearing display.");
+            display.writeString("", MAX_RPM, false);
+            webServer.setWrittenString("");
+        }
         return;
     }
 
