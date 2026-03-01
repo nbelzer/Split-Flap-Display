@@ -6788,7 +6788,7 @@
 			(justify left bottom)
 		)
 	)
-	(gr_text "SplitFlap v4"
+	(gr_text "SplitFlap v5"
 		(at 146 62.469 0)
 		(layer "F.SilkS")
 		(uuid "7dde0de9-ca52-4982-a1af-4ebd32993e26")
