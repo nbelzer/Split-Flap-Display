@@ -9,6 +9,15 @@ void SplitFlapMqtt::setup() {
     mqttUser = settings.getString("mqtt_user");
     mqttPass = settings.getString("mqtt_pass");
 
+    enabled = ! mqttServer.isEmpty();
+    if (! enabled) {
+        if (mqttClient.connected()) {
+            mqttClient.disconnect();
+        }
+        Serial.println("[MQTT] Disabled: no server configured");
+        return;
+    }
+
     String mdns = settings.getString("mdns");
     String name = settings.getString("name");
 
@@ -35,7 +44,7 @@ void SplitFlapMqtt::setup() {
 }
 
 void SplitFlapMqtt::connectToMqtt() {
-    if (! mqttClient.connected()) {
+    if (enabled && ! mqttClient.connected()) {
         Serial.println("[MQTT] Attempting to connect...");
         String clientId = "SplitFlap-" + settings.getString("mdns");
         if (mqttUser.length() > 0) {
@@ -97,14 +106,20 @@ void SplitFlapMqtt::setDisplay(SplitFlapDisplay *d) {
 }
 
 void SplitFlapMqtt::publishState(const String &message) {
+    if (! enabled) {
+        return;
+    }
+
     Serial.println("[MQTT] Publishing state: " + message);
     mqttClient.publish(topic_state.c_str(), message.c_str(), true);
 }
 
 void SplitFlapMqtt::loop() {
-    mqttClient.loop();
+    if (enabled) {
+        mqttClient.loop();
+    }
 }
 
 bool SplitFlapMqtt::isConnected() {
-    return mqttClient.connected();
+    return enabled && mqttClient.connected();
 }

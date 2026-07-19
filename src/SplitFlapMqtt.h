@@ -22,6 +22,7 @@ class SplitFlapMqtt {
 
     JsonSettings &settings;
     SplitFlapDisplay *display;
+    bool enabled = false;
 
     void connectToMqtt();
 
