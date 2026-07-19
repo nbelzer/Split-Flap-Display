@@ -2,9 +2,14 @@
 
 #include <ArduinoJson.h>
 #include <AsyncJson.h>
+#include <esp_wifi.h>
 #include <time.h>
 
 #define AP_SSID "Split Flap Display"
+
+namespace {
+constexpr uint16_t WIFI_LISTEN_INTERVAL = 5;
+}
 
 #ifndef WIFI_SSID
 #define WIFI_SSID ""
@@ -49,7 +54,20 @@ bool SplitFlapWebServer::loadWiFiCredentials() {
         delay(100);
         WiFi.setTxPower((wifi_power_t) WIFI_TX_POWER);
 #endif
-        WiFi.begin(ssid.c_str(), password.c_str());
+        // Store the Arduino Wi-Fi configuration without connecting yet, then
+        // add the listen interval used by maximum modem sleep. WiFi.begin()
+        // would otherwise overwrite listen_interval with zero.
+        WiFi.begin(ssid.c_str(), password.c_str(), 0, nullptr, false);
+        wifi_config_t wifiConfig;
+        if (esp_wifi_get_config(WIFI_IF_STA, &wifiConfig) == ESP_OK) {
+            wifiConfig.sta.listen_interval = WIFI_LISTEN_INTERVAL;
+            if (esp_wifi_set_config(WIFI_IF_STA, &wifiConfig) != ESP_OK) {
+                Serial.println("Failed to configure Wi-Fi listen interval");
+            }
+        } else {
+            Serial.println("Failed to read Wi-Fi station configuration");
+        }
+        WiFi.begin();
         return true; // Return true if credentials exist
     }
     return false;    // Return false if no credentials were found
@@ -306,8 +324,9 @@ void SplitFlapWebServer::stopConfigurationServices() {
     MDNS.end();
 
     if (connectionMode == 1) {
-        if (WiFi.setSleep(true)) {
-            Serial.println("Wi-Fi modem sleep enabled");
+        if (WiFi.setSleep(WIFI_PS_MAX_MODEM)) {
+            Serial.print("Wi-Fi maximum modem sleep enabled, listen interval: ");
+            Serial.println(WIFI_LISTEN_INTERVAL);
         } else {
             Serial.println("Failed to enable Wi-Fi modem sleep");
         }
