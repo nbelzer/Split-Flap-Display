@@ -12,14 +12,18 @@
 
 #include <Arduino.h>
 #include <WiFiClient.h>
+#include <time.h>
 
 namespace {
 constexpr unsigned long CONFIGURATION_WINDOW_MS = 15UL * 60UL * 1000UL;
 constexpr unsigned long CONFIGURATION_LOOP_DELAY_MS = 20;
 constexpr unsigned long LOW_POWER_LOOP_DELAY_MS = 250;
+constexpr time_t HOMING_INTERVAL_SECONDS = 12UL * 60UL * 60UL;
+constexpr time_t MINIMUM_VALID_TIME = 24UL * 60UL * 60UL;
 
 unsigned long bootTime = 0;
 bool configurationServicesStopped = false;
+time_t lastUpdateHomingPeriod = -1;
 }
 
 // clang-format off
@@ -118,6 +122,16 @@ void loop() {
 void updateFromUrl() {
     String content;
     if (urlClient.fetchIfDue(content)) {
+        time_t now = time(nullptr);
+        if (now >= MINIMUM_VALID_TIME) {
+            time_t currentHomingPeriod = now / HOMING_INTERVAL_SECONDS;
+            if (lastUpdateHomingPeriod >= 0 && currentHomingPeriod != lastUpdateHomingPeriod) {
+                Serial.println("Starting 12-hour homing cycle before URL update");
+                display.homeToString("");
+            }
+            lastUpdateHomingPeriod = currentHomingPeriod;
+        }
+
         // Treat the response as positional display text. writeString handles
         // UTF-8 symbols and truncates it to the configured module count.
         display.writeString(content, MAX_RPM, false);
