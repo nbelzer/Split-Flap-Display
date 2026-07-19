@@ -95,9 +95,8 @@ void loop() {
     splitflapMqtt.loop();
 
     if (webServer.consumeHomingRequest()) {
-        // Reload hardware-related settings before homing, then immediately
-        // refresh the URL content using any newly saved configuration.
-        display.init();
+        // Keep using the module connections detected during boot. Re-probing
+        // here can turn a transient I2C error into a skipped module.
         display.homeToString("");
         urlClient.requestRefresh();
     }
