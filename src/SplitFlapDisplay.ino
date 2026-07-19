@@ -126,7 +126,9 @@ void updateFromUrl() {
             time_t currentHomingPeriod = now / HOMING_INTERVAL_SECONDS;
             if (lastUpdateHomingPeriod >= 0 && currentHomingPeriod != lastUpdateHomingPeriod) {
                 Serial.println("Starting 12-hour homing cycle before URL update");
-                display.homeToString("");
+                lastUpdateHomingPeriod = currentHomingPeriod;
+                display.homeToString(content, MAX_RPM, false);
+                return;
             }
             lastUpdateHomingPeriod = currentHomingPeriod;
         }
