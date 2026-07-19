@@ -37,7 +37,7 @@ JsonSettings settings = JsonSettings("config", {
     {"sclPin", JsonSetting(7)},
     {"stepsPerRot", JsonSetting(2048)},
     {"maxVel", JsonSetting(15.0f)},
-    {"charset", JsonSetting(37)},
+    {"charset", JsonSetting(64)},
     // Operational States
     {"mode", JsonSetting(0)}
 });
@@ -71,7 +71,7 @@ void setup() {
         if (display.getNumModules() == 8) {
             display.writeString("Wifi Err");
         } else {
-            display.writeChar('X');
+            display.writeChar("X");
         }
     } else {
         webServer.enableOta();
@@ -132,8 +132,7 @@ void singleInputMode() {
 void multiInputMode() {
     if (millis() - webServer.getLastSwitchMultiTime() > webServer.getMultiWordDelay()) {
         // get user input, extract correct word from index using webserver counter, and display
-        String userInput = webServer.getMultiInputString();
-        String currWord = extractFromCSV(userInput, webServer.getMultiWordCurrentIndex());
+        String currWord = webServer.getMultiInputString(webServer.getMultiWordCurrentIndex());
         if (currWord != webServer.getWrittenString()) {
             display.writeString(currWord, MAX_RPM, webServer.getCentering());
             webServer.setWrittenString(currWord);
@@ -214,7 +213,7 @@ void reconnectIfNeeded() {
             webServer.enableOta();
             webServer.endMDNS();
             webServer.startMDNS();
-            display.writeChar('X');
+            display.writeChar("X");
         } else {
             webServer.enableOta();
             webServer.endMDNS();
@@ -228,23 +227,4 @@ void reconnectIfNeeded() {
 
         splitflapMqtt.setup();
     }
-}
-
-String extractFromCSV(String str, int index) {
-    int startIndex = 0;
-    int endIndex = str.length();
-
-    int commaCount = 0;
-    for (int i = 0; i < str.length(); i++) {
-        if (str[i] == ',') {
-            commaCount++;
-            if (commaCount == index) {
-                startIndex = i + 1; // skip past the comma
-            } else if (commaCount == index + 1) {
-                endIndex = i;
-            }
-        }
-    }
-
-    return str.substring(startIndex, endIndex);
 }

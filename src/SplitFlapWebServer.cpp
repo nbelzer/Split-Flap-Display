@@ -426,7 +426,7 @@ void SplitFlapWebServer::startWebServer() {
             response["message"] = "Invalid mode type";
         }
 
-        if (! json["words"].is<JsonArray>()) {
+        if (! json["words"].is<JsonArray>() || json["words"].as<JsonArray>().size() == 0) {
             response["message"] = "Invalid words array";
         }
 
@@ -451,7 +451,7 @@ void SplitFlapWebServer::startWebServer() {
         Serial.println("centering: " + String(centering ? "true" : "false"));
 
         if (json["mode"] == "single") {
-            String word = decodeURIComponent(json["words"][0].as<String>());
+            String word = json["words"][0].as<String>();
             Serial.println("Single Word: " + word);
             this->setInputString(word);
             this->setMode(0); // change mode last once all variables updated
@@ -459,17 +459,14 @@ void SplitFlapWebServer::startWebServer() {
 
         if (json["mode"] == "multiple") {
             JsonArray wordsArray = json["words"].as<JsonArray>();
-            String words = "";
+            this->multiInputStrings.clear();
+            this->multiInputStrings.reserve(wordsArray.size());
             for (JsonVariant v : wordsArray) {
-                words += decodeURIComponent(v.as<String>()) + ",";
-            }
-            if (words.length() > 0) {
-                words.remove(words.length() - 1);
+                this->multiInputStrings.push_back(v.as<String>());
             }
 
-            this->setMultiInputString(words);
             this->numMultiWords = wordsArray.size();
-            Serial.println("Multiple Words: " + words);
+            this->multiWordCurrentIndex = 0;
             Serial.println("Number of Words: " + String(this->numMultiWords));
 
             this->setMode(1);
@@ -484,48 +481,4 @@ void SplitFlapWebServer::startWebServer() {
     server.onNotFound(fourOhFour);
 
     server.begin();
-}
-
-String SplitFlapWebServer::decodeURIComponent(String encodedString) {
-    String decodedString = encodedString;
-    // Replace common URL-encoded characters with their actual symbols
-    decodedString.replace("%20", " ");  // space
-    decodedString.replace("%21", "!");  // exclamation mark
-    decodedString.replace("%22", "\""); // double quote
-    decodedString.replace("%23", "#");  // hash
-    decodedString.replace("%24", "$");  // dollar sign
-    decodedString.replace("%25", "%");  // percent
-    decodedString.replace("%26", "&");  // ampersand
-    decodedString.replace("%27", "'");  // single quote
-    decodedString.replace("%28", "(");  // left parenthesis
-    decodedString.replace("%29", ")");  // right parenthesis
-    decodedString.replace("%2A", "*");  // asterisk
-    decodedString.replace("%2B", "+");  // plus
-    decodedString.replace("%2C", ",");  // comma
-    decodedString.replace("%2D", "-");  // hyphen
-    decodedString.replace("%2E", ".");  // period
-    decodedString.replace("%2F", "/");  // forward slash
-    decodedString.replace("%3A", ":");  // colon
-    decodedString.replace("%3B", ";");  // semicolon
-    decodedString.replace("%3C", "<");  // less than
-    decodedString.replace("%3D", "=");  // equal sign
-    decodedString.replace("%3E", ">");  // greater than
-    decodedString.replace("%3F", "?");  // question mark
-    decodedString.replace("%40", "@");  // at symbol
-    decodedString.replace("%5B", "[");  // left bracket
-    decodedString.replace("%5C", "\\"); // backslash
-    decodedString.replace("%5D", "]");  // right bracket
-    decodedString.replace("%5E", "^");  // caret
-    decodedString.replace("%5F", "_");  // underscore
-    decodedString.replace("%60", "`");  // grave accent
-    decodedString.replace("%7B", "{");  // left brace
-    decodedString.replace("%7C", "|");  // vertical bar
-    decodedString.replace("%7D", "}");  // right brace
-    decodedString.replace("%7E", "~");  // tilde
-
-    // Handle percent-encoded values for characters beyond basic ASCII (e.g.,
-    // extended Unicode)
-    decodedString.replace("%", "");
-
-    return decodedString;
 }

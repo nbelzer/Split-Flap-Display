@@ -2,21 +2,17 @@
 
 // Array of characters, in order, the first item is located on the magnet on the
 // character drum
-const char SplitFlapModule::StandardChars[37] = {' ', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
-                                                 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y',
-                                                 'Z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+const char *const SplitFlapModule::StandardChars[37] = {" ", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L",
+                                                 "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y",
+                                                 "Z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
 
-const char SplitFlapModule::ExtendedChars[48] = {
-    ' ', 'A', 'B', 'C', 'D', 'E',  'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
-    'P', 'Q', 'R', 'S', 'T', 'U',  'V', 'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4',
-    '5', '6', '7', '8', '9', '\'', ':', '?', '!', '.', '-', '/', '$', '@', '#', '%',
-};
-
-bool hasErrored = false;
+// "ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$&()-+=;:'\"%,.?♥/1234567890⬛⬜🟥🟧🟨🟩🟦🟪"
+const char *const SplitFlapModule::ExtendedChars[64] = {
+  "A", "B", "C", "D", "E",  "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U",  "V", "W", "X", "Y", "Z", "!", "@", "#", "$", "&", "(", ")", "-", "+", "=", ";", ":", "'", "\"", "%", ",", ".", "?", "♥", "/", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", " ", "⬜", "🟥", "🟧", "🟨", "🟩", "🟦", "🟪" };
 
 // Default Constructor
 SplitFlapModule::SplitFlapModule()
-    : address(0), position(0), stepNumber(0), stepsPerRot(0), chars(StandardChars), numChars(37), charSetSize(37) {
+    : address(0), position(0), stepNumber(0), stepsPerRot(0), chars(StandardChars), numChars(37) {
     magnetPosition = 710;
 }
 
@@ -24,11 +20,11 @@ SplitFlapModule::SplitFlapModule()
 SplitFlapModule::SplitFlapModule(
     uint8_t I2Caddress, int stepsPerFullRotation, int stepOffset, int magnetPos, int charsetSize
 )
-    : address(I2Caddress), position(0), stepNumber(0), stepsPerRot(stepsPerFullRotation), charSetSize(charsetSize) {
+    : address(I2Caddress), position(0), stepNumber(0), stepsPerRot(stepsPerFullRotation) {
     magnetPosition = magnetPos + stepOffset;
 
-    chars = (charsetSize == 48) ? ExtendedChars : StandardChars;
-    numChars = (charsetSize == 48) ? 48 : 37;
+    chars = (charsetSize == 64) ? ExtendedChars : StandardChars;
+    numChars = (charsetSize == 64) ? 64 : 37;
 }
 
 bool SplitFlapModule::writeIO(uint16_t data) {
@@ -83,14 +79,24 @@ void SplitFlapModule::init() {
     stop();
 }
 
-int SplitFlapModule::getCharPosition(char inputChar) {
-    inputChar = toupper(inputChar);
-    for (int i = 0; i < charSetSize; i++) {
-        if (chars[i] == inputChar) {
+int SplitFlapModule::getCharPosition(const String &inputChar) const {
+    String normalized = inputChar;
+    normalized.toUpperCase();
+
+    for (int i = 0; i < numChars; i++) {
+        if (normalized == chars[i]) {
             return charPositions[i];
         }
     }
-    return 0; // Character not found, return blank
+
+    // Unsupported input must resolve to the actual blank flap. In the extended
+    // set blank is not at index zero.
+    for (int i = 0; i < numChars; i++) {
+        if (strcmp(chars[i], " ") == 0) {
+            return charPositions[i];
+        }
+    }
+    return 0;
 }
 
 void SplitFlapModule::stop() {

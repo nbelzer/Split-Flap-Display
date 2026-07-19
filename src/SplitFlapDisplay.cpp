@@ -57,18 +57,15 @@ void SplitFlapDisplay::init() {
 }
 
 void SplitFlapDisplay::testAll() {
-    char testChars[37] = {' ', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
-                          'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
-    int numChars = sizeof(testChars) / sizeof(testChars[0]);
+    int numChars = modules[0].getCharsetSize();
     int targetPositions[numModules];
 
-    int charPos;
     for (int i = 0; i < numChars; i++) {
         // Serial.print("Target Positions: [");
         // fill array with same char
 
         for (int j = 0; j < numModules; j++) {
-            targetPositions[j] = modules[j].getCharPosition(testChars[i]);
+            targetPositions[j] = modules[j].getCharPosition(modules[j].getChar(i));
             // Serial.print(targetPositions[j]);
             // Serial.print(" , ");
         }
@@ -80,15 +77,12 @@ void SplitFlapDisplay::testAll() {
 }
 
 void SplitFlapDisplay::testRandom(float speed) {
-    char testChars[37] = {' ', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
-                          'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
-
     int targetPositions[numModules];
-    char randChar;
+    int numChars = modules[0].getCharsetSize();
 
     Serial.print("Target: ");
     for (int i = 0; i < numModules; i++) {
-        randChar = testChars[random(0, 37)];
+        const char *randChar = modules[i].getChar(random(0, numChars));
         targetPositions[i] = modules[i].getCharPosition(randChar);
         Serial.print(randChar);
     }
@@ -97,7 +91,6 @@ void SplitFlapDisplay::testRandom(float speed) {
 }
 
 void SplitFlapDisplay::testCount() {
-    int count = 0;
     int maxCount = pow(10, numModules);
     char targetChar;
     int targetInteger;
@@ -109,7 +102,7 @@ void SplitFlapDisplay::testCount() {
         for (int j = 0; j < numModules; j++) {
             targetInteger = (i % (int) pow(10, j + 1)) / (int) pow(10, j);
             targetChar = targetInteger + '0'; // convert to char
-            targetPositions[numModules - j - 1] = modules[j].getCharPosition(targetChar);
+            targetPositions[numModules - j - 1] = modules[j].getCharPosition(String(targetChar));
         }
 
         moveTo(targetPositions);
@@ -122,7 +115,7 @@ void SplitFlapDisplay::home(float speed) {
     calibrateModules();
 
     int targetPositions[numModules];
-    char homeChar = ' ';
+    String homeChar = " ";
     for (int i = 0; i < numModules; i++) {
         targetPositions[i] = modules[i].getCharPosition(homeChar);
     }
@@ -135,7 +128,7 @@ void SplitFlapDisplay::homeToString(String homeString, float speed, bool centeri
     writeString(homeString, speed, centering);
 }
 
-void SplitFlapDisplay::homeToChar(char homeChar, float speed) {
+void SplitFlapDisplay::homeToChar(const String &homeChar, float speed) {
     Serial.println("Homing");
     calibrateModules();
 
@@ -146,7 +139,7 @@ void SplitFlapDisplay::homeToChar(char homeChar, float speed) {
     moveTo(targetPositions, speed);
 }
 
-void SplitFlapDisplay::writeChar(char inputChar, float speed) {
+void SplitFlapDisplay::writeChar(const String &inputChar, float speed) {
     int targetPositions[numModules];
     // Iterate through the input string and process each character
     for (int i = 0; i < numModules; i++) {
@@ -155,51 +148,49 @@ void SplitFlapDisplay::writeChar(char inputChar, float speed) {
     moveTo(targetPositions, speed);
 }
 
-String sanitizeInput(const String &input) {
-    String sanitized = input;
-
-    // Replace problematic characters
-    sanitized.replace("'", "'\\'");
-    sanitized.replace("%", "%%");
-
-    return sanitized;
-}
-
 void SplitFlapDisplay::writeString(String inputString, float speed, bool centering) {
-    inputString = sanitizeInput(inputString);
-    String displayString = inputString.substring(0, numModules);
+    String displaySymbols[MAX_MODULES];
+    int symbolCount = 0;
+
+    // Arduino String indexes bytes. Split on UTF-8 code points so symbols such
+    // as hearts and colored squares consume one module instead of 3-4 modules.
+    for (unsigned int byteIndex = 0; byteIndex < inputString.length() && symbolCount < numModules;) {
+        uint8_t leadByte = static_cast<uint8_t>(inputString[byteIndex]);
+        unsigned int symbolBytes = 1;
+        if ((leadByte & 0xE0) == 0xC0) {
+            symbolBytes = 2;
+        } else if ((leadByte & 0xF0) == 0xE0) {
+            symbolBytes = 3;
+        } else if ((leadByte & 0xF8) == 0xF0) {
+            symbolBytes = 4;
+        }
+        if (byteIndex + symbolBytes > inputString.length()) {
+            symbolBytes = 1;
+        }
+        displaySymbols[symbolCount++] = inputString.substring(byteIndex, byteIndex + symbolBytes);
+        byteIndex += symbolBytes;
+    }
 
     if (centering) {
-        int totalPadding = numModules - displayString.length();
+        int totalPadding = numModules - symbolCount;
         int paddingLeft = totalPadding / 2;
-        int paddingRight = totalPadding - paddingLeft;
-
-        // Add padding to the left
-        String result = "";
+        for (int i = symbolCount - 1; i >= 0; i--) {
+            displaySymbols[i + paddingLeft] = displaySymbols[i];
+        }
         for (int i = 0; i < paddingLeft; i++) {
-            result += " ";
+            displaySymbols[i] = " ";
         }
-
-        // Add the original string
-        result += displayString;
-
-        // Add padding to the right
-        for (int i = 0; i < paddingRight; i++) {
-            result += " ";
-        }
-        displayString = result;
-    } else {                                          // pad blanks to end, if no centering
-        while (displayString.length() < numModules) { // Pad with spaces
-            displayString += " ";                     // Padding with space
-        }
+        symbolCount += paddingLeft;
+    }
+    while (symbolCount < numModules) {
+        displaySymbols[symbolCount++] = " ";
     }
 
     int targetPositions[numModules];
-    // Iterate through the input string and process each character
-    for (int i = 0; i < displayString.length(); i++) {
-        char currentChar = displayString[i];
-        // Serial.println(currentChar);
-        targetPositions[i] = modules[i].getCharPosition(currentChar);
+    String displayString;
+    for (int i = 0; i < numModules; i++) {
+        targetPositions[i] = modules[i].getCharPosition(displaySymbols[i]);
+        displayString += displaySymbols[i];
     }
     moveTo(targetPositions, speed);
 

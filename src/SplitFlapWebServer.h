@@ -10,6 +10,7 @@
 #include <LittleFS.h>
 #include <WiFi.h>
 #include <time.h>
+#include <vector>
 
 class SplitFlapWebServer {
   public:
@@ -48,7 +49,7 @@ class SplitFlapWebServer {
     void setWrittenString(String input) { writtenString = input; }
 
     // Mode 1, Multi Input
-    String getMultiInputString() const { return multiInputString; }
+    String getMultiInputString(int index) const { return multiInputStrings[index]; }
     int getMultiWordDelay() const { return multiWordDelay; }
     unsigned long getLastSwitchMultiTime() { return lastSwitchMultiTime; }
     void setLastSwitchMultiTime(unsigned long input) { lastSwitchMultiTime = input; }
@@ -72,9 +73,7 @@ class SplitFlapWebServer {
   private:
     JsonSettings &settings;
 
-    String decodeURIComponent(String encodedString);
     void setInputString(String input) { inputString = input; }
-    void setMultiInputString(String input) { multiInputString = input; }
 
     void setMode(int targetMode);
     void setMultiDelay(int input) { multiWordDelay = input; }
@@ -89,7 +88,7 @@ class SplitFlapWebServer {
     unsigned long lastSwitchMultiTime;
     int multiWordDelay;
     int multiWordCurrentIndex;
-    String multiInputString; // latest multi input from user
+    std::vector<String> multiInputStrings; // latest multi inputs from user
 
     String inputString;      // latest single input from user
     String writtenString;    // string for whatever is currently written to the display

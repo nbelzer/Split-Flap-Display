@@ -18,8 +18,8 @@ class SplitFlapDisplay {
     void writeString(
         String inputString, float speed = MAX_RPM,
         bool centering = true
-    );                                     // Move all modules at once to show a specific string
-    void writeChar(char inputChar,
+    );                                     // Move all modules together to show a string
+    void writeChar(const String &inputChar,
                    float speed = MAX_RPM); // sets all modules to a single char
     void moveTo(int targetPositions[], float speed = MAX_RPM, bool releaseMotors = true);
     void home(float speed = MAX_RPM);      // move home
@@ -27,7 +27,7 @@ class SplitFlapDisplay {
         String homeString, float speed = MAX_RPM,
         bool centering = true
     );                                      // moves home and then writes a string
-    void homeToChar(char homeChar,
+    void homeToChar(const String &homeChar,
                     float speed = MAX_RPM); // moves home and then sets all modules to a char
     void testAll();
     void testCount();
@@ -50,7 +50,7 @@ class SplitFlapDisplay {
     int displayOffset;
 
     float maxVel;       // Max Velocity In RPM
-    int charSetSize;    // 37 for standard, 48 for extended
+    int charSetSize;    // 37 for standard, 64 for extended
     int stepsPerRot;    // number of motor steps per full rotation of character
                         // drum
     int magnetPosition; // position of drum wheel when magnet is detected
