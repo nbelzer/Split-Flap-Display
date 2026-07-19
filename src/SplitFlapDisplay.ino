@@ -13,6 +13,15 @@
 #include <Arduino.h>
 #include <WiFiClient.h>
 
+namespace {
+constexpr unsigned long CONFIGURATION_WINDOW_MS = 15UL * 60UL * 1000UL;
+constexpr unsigned long CONFIGURATION_LOOP_DELAY_MS = 20;
+constexpr unsigned long LOW_POWER_LOOP_DELAY_MS = 250;
+
+unsigned long bootTime = 0;
+bool configurationServicesStopped = false;
+}
+
 // clang-format off
 JsonSettings settings = JsonSettings("config", {
     // General Settings
@@ -51,6 +60,7 @@ SplitFlapUrlClient urlClient(settings);
 void setup() {
     // put your setup code here, to run once:
     Serial.begin(SERIAL_SPEED);
+    bootTime = millis();
 
     display.init();
 
@@ -100,7 +110,13 @@ void loop() {
     reconnectIfNeeded();
 
     webServer.checkRebootRequired();
-    yield();
+
+    if (! configurationServicesStopped && millis() - bootTime >= CONFIGURATION_WINDOW_MS) {
+        webServer.stopConfigurationServices();
+        configurationServicesStopped = true;
+    }
+
+    delay(configurationServicesStopped ? LOW_POWER_LOOP_DELAY_MS : CONFIGURATION_LOOP_DELAY_MS);
 }
 
 void updateFromUrl() {

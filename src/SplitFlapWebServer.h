@@ -22,6 +22,7 @@ class SplitFlapWebServer {
     bool getAttemptReconnect() const { return attemptReconnect; }
     void setAttemptReconnect(bool input) { attemptReconnect = input; }
     void startWebServer();
+    void stopConfigurationServices();
     void endMDNS();
     void startMDNS();
     void enableOta();

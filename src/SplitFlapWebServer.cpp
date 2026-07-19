@@ -299,3 +299,25 @@ void SplitFlapWebServer::startWebServer() {
 
     server.begin();
 }
+
+void SplitFlapWebServer::stopConfigurationServices() {
+    server.end();
+    ArduinoOTA.end();
+    MDNS.end();
+
+    if (connectionMode == 1) {
+        if (WiFi.setSleep(true)) {
+            Serial.println("Wi-Fi modem sleep enabled");
+        } else {
+            Serial.println("Failed to enable Wi-Fi modem sleep");
+        }
+    } else {
+        // An access point cannot use modem sleep because it must keep sending
+        // beacons. Once configuration closes, switch its radio off entirely.
+        WiFi.softAPdisconnect(true);
+        WiFi.mode(WIFI_OFF);
+        Serial.println("Configuration access point stopped");
+    }
+
+    Serial.println("Web server, OTA and mDNS stopped");
+}
