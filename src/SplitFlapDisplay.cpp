@@ -51,6 +51,13 @@ void SplitFlapDisplay::init() {
     Wire.begin(SDAPin, SCLPin);
     Wire.setClock(400000);
 
+    // Put every motor driver into its off state before running the slower
+    // per-module initialization sequence. PCF8575 ports power up HIGH, so a
+    // quick shutdown sweep minimizes simultaneous motor current at startup.
+    for (uint8_t i = 0; i < numModules; i++) {
+        modules[i].stop();
+    }
+
     for (uint8_t i = 0; i < numModules; i++) {
         modules[i].init();
     }

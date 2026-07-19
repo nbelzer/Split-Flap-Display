@@ -52,6 +52,8 @@ void setup() {
     // put your setup code here, to run once:
     Serial.begin(SERIAL_SPEED);
 
+    display.init();
+
 #ifdef STARTUP_DELAY
     delay(STARTUP_DELAY);
 #endif
@@ -65,7 +67,6 @@ void setup() {
         webServer.startMDNS();
         webServer.startWebServer();
 
-        display.init();
         display.homeToString("");
 
         if (display.getNumModules() == 8) {
@@ -78,7 +79,6 @@ void setup() {
         webServer.startMDNS();
         webServer.startWebServer();
 
-        display.init();
         splitflapMqtt.setup();
         splitflapMqtt.setDisplay(&display);
         display.setMqtt(&splitflapMqtt);
