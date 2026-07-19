@@ -7,6 +7,7 @@
 #include "JsonSettings.h"
 #include "SplitFlapDisplay.h"
 #include "SplitFlapMqtt.h"
+#include "SplitFlapUrlClient.h"
 #include "SplitFlapWebServer.h"
 
 #include <Arduino.h>
@@ -18,7 +19,7 @@ JsonSettings settings = JsonSettings("config", {
     {"name", JsonSetting("My Display")},
     {"mdns", JsonSetting("splitflap")},
     {"otaPass", JsonSetting("")},
-    {"timezone", JsonSetting("Etc/UTC")},
+    {"contentUrl", JsonSetting("")},
     // Wifi Settings
     {"ssid", JsonSetting("")},
     {"password", JsonSetting("")},
@@ -37,9 +38,7 @@ JsonSettings settings = JsonSettings("config", {
     {"sclPin", JsonSetting(7)},
     {"stepsPerRot", JsonSetting(2048)},
     {"maxVel", JsonSetting(15.0f)},
-    {"charset", JsonSetting(64)},
-    // Operational States
-    {"mode", JsonSetting(0)}
+    {"charset", JsonSetting(64)}
 });
 // clang-format on
 
@@ -47,6 +46,7 @@ WiFiClient wifiClient;
 SplitFlapDisplay display(settings);
 SplitFlapWebServer webServer(settings);
 SplitFlapMqtt splitflapMqtt(settings, wifiClient);
+SplitFlapUrlClient urlClient(settings);
 
 void setup() {
     // put your setup code here, to run once:
@@ -94,22 +94,18 @@ void loop() {
     splitflapMqtt.loop();
 
     if (webServer.consumeHomingRequest()) {
-        // Reload hardware-related settings before homing, then allow the
-        // active display mode to restore its text on the next loop pass.
+        // Reload hardware-related settings before homing, then immediately
+        // refresh the URL content using any newly saved configuration.
         display.init();
         display.homeToString("");
-        webServer.setWrittenString("");
+        urlClient.requestRefresh();
     }
 
-    // check what mode the display is in, this value is updated by the web server
-    switch (webServer.getMode()) {
-        case 0: singleInputMode(); break;
-        case 1: multiInputMode(); break;
-        case 2: dateMode(); break;
-        case 3: timeMode(); break;
-        case 4: break;
-        case 5: randomTest(); break;
-        default: break;
+    String content;
+    if (urlClient.fetchIfDue(content)) {
+        // Treat the response as positional display text. writeString handles
+        // UTF-8 symbols and truncates it to the configured module count.
+        display.writeString(content, MAX_RPM, false);
     }
 
     webServer.handleOta();
@@ -119,81 +115,6 @@ void loop() {
 
     webServer.checkRebootRequired();
     yield();
-}
-
-void singleInputMode() {
-    String userInput = webServer.getInputString();
-    if (userInput != webServer.getWrittenString()) {
-        display.writeString(userInput, MAX_RPM, webServer.getCentering());
-        webServer.setWrittenString(userInput);
-    }
-}
-
-void multiInputMode() {
-    if (millis() - webServer.getLastSwitchMultiTime() > webServer.getMultiWordDelay()) {
-        // get user input, extract correct word from index using webserver counter, and display
-        String currWord = webServer.getMultiInputString(webServer.getMultiWordCurrentIndex());
-        if (currWord != webServer.getWrittenString()) {
-            display.writeString(currWord, MAX_RPM, webServer.getCentering());
-            webServer.setWrittenString(currWord);
-        }
-        webServer.setLastSwitchMultiTime(millis());
-        webServer.setMultiWordCurrentIndex((webServer.getMultiWordCurrentIndex() + 1) % (webServer.getNumMultiWords()));
-    }
-}
-
-void dateMode() {
-    if (millis() - webServer.getLastCheckDateTime() > webServer.getDateCheckInterval()) {
-        webServer.setLastCheckDateTime(millis());
-        String currentDay = webServer.getCurrentDay();
-        String dayPrefix = webServer.getDayPrefix(3);
-
-        String outputString = " ";
-        switch (display.getNumModules()) {
-            case 2: outputString = currentDay; break;
-            case 3: outputString = dayPrefix; break;
-            case 4: outputString = " " + currentDay + " "; break;
-            case 5: outputString = dayPrefix + currentDay; break;
-            case 6: outputString = dayPrefix + " " + currentDay; break;
-            case 7: outputString = dayPrefix + "  " + currentDay; break;
-            case 8: outputString = dayPrefix + currentDay + webServer.getMonthPrefix(3); break;
-            default: break;
-        }
-        if (outputString != webServer.getWrittenString()) {
-            display.writeString(outputString, MAX_RPM, webServer.getCentering());
-            webServer.setWrittenString(outputString);
-        }
-    }
-}
-
-void timeMode() {
-    if (millis() - webServer.getLastCheckDateTime() > webServer.getDateCheckInterval()) {
-        webServer.setLastCheckDateTime(millis());
-        String currentHour = webServer.getCurrentHour();
-        String currentMinute = webServer.getCurrentMinute();
-        String outputString = " ";
-
-        switch (display.getNumModules()) {
-            case 2: outputString = currentMinute; break;
-            case 3: outputString = " " + currentMinute; break;
-            case 4: outputString = currentHour + "" + currentMinute; break;
-            case 5: outputString = currentHour + " " + currentMinute; break;
-            case 6: outputString = " " + currentHour + " " + currentMinute; break;
-            case 7: outputString = " " + currentHour + " " + currentMinute + " "; break;
-            case 8: outputString = " " + currentHour + currentMinute + " "; break;
-            default: break;
-        }
-
-        if (outputString != webServer.getWrittenString()) {
-            display.writeString(outputString, MAX_RPM, webServer.getCentering());
-            webServer.setWrittenString(outputString);
-        }
-    }
-}
-
-void randomTest() {
-    display.testRandom();
-    delay(2500);
 }
 
 void checkConnection() {
@@ -219,10 +140,9 @@ void reconnectIfNeeded() {
             webServer.endMDNS();
             webServer.startMDNS();
             display.writeString("OK");
-            webServer.setWrittenString("OK");
             delay(500);
             display.writeString("");
-            webServer.setWrittenString("");
+            urlClient.requestRefresh();
         }
 
         splitflapMqtt.setup();

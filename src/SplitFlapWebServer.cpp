@@ -2,6 +2,7 @@
 
 #include <ArduinoJson.h>
 #include <AsyncJson.h>
+#include <time.h>
 
 #define AP_SSID "Split Flap Display"
 
@@ -14,141 +15,14 @@
 #endif
 
 SplitFlapWebServer::SplitFlapWebServer(JsonSettings &settings)
-    : settings(settings), server(80), multiWordDelay(1000), rebootRequired(false), attemptReconnect(false),
-      multiWordCurrentIndex(0), numMultiWords(0), wifiCheckInterval(1000), connectionMode(0), checkDateInterval(250),
-      centering(1) {
-    lastSwitchMultiTime = millis();
-}
+    : settings(settings), connectionMode(0), rebootRequired(false), attemptReconnect(false), wifiCheckInterval(1000),
+      server(80) {}
 
 void SplitFlapWebServer::init() {
     if (! LittleFS.begin()) {
         Serial.println("An Error has occurred while mounting LittleFS");
         return;
     }
-
-    setTimezone();
-}
-
-void SplitFlapWebServer::setTimezone() {
-    const char *sntpServer = "pool.ntp.org";
-    const char *defaultTz = "UTC0";
-    String timezoneSetting = settings.getString("timezone");
-    String posixTimezone = defaultTz;
-
-    File file = LittleFS.open("/timezones.json", "r");
-    if (! file) {
-        Serial.println("Failed to open timezones.json; defaulting to UTC");
-        configTzTime(defaultTz, sntpServer);
-        return;
-    }
-
-    size_t size = file.size();
-    std::unique_ptr<char[]> buffer(new char[size]);
-    file.readBytes(buffer.get(), size);
-    file.close();
-
-    JsonDocument timezones;
-    DeserializationError error = deserializeJson(timezones, buffer.get());
-
-    if (error) {
-        Serial.println("Failed to parse timezones.json: " + String(error.c_str()));
-        configTzTime(defaultTz, sntpServer);
-        return;
-    }
-
-    for (JsonPair kv : timezones.as<JsonObject>()) {
-        String keyStr = kv.key().c_str();
-        String valueStr = kv.value().as<String>();
-
-        if (keyStr == timezoneSetting) {
-            posixTimezone = valueStr;
-            break;
-        }
-    }
-
-    Serial.println("POSIX Timezone set to: " + posixTimezone);
-    configTzTime(posixTimezone.c_str(), sntpServer);
-}
-
-// Totally didn't use AI to make these functions
-//  Function to get current minute as a string
-String SplitFlapWebServer::getCurrentMinute() {
-    struct tm timeinfo;
-    if (! getLocalTime(&timeinfo)) {
-        return "";
-    }
-    char minuteStr[3];                           // Max "59" + null terminator
-    sprintf(minuteStr, "%02d", timeinfo.tm_min); // Format as two-digit string
-    return String(minuteStr);
-}
-
-// Function to get current hour as a string
-String SplitFlapWebServer::getCurrentHour() {
-    struct tm timeinfo;
-    if (! getLocalTime(&timeinfo)) {
-        return "";
-    }
-    char hourStr[3];                            // Max "59" + null terminator
-    sprintf(hourStr, "%02d", timeinfo.tm_hour); // Format as two-digit string
-    return String(hourStr);
-}
-
-// Function to get the first n characters of the day
-String SplitFlapWebServer::getDayPrefix(int n) {
-    struct tm timeinfo;
-    if (! getLocalTime(&timeinfo)) {
-        return "Err"; // Return error if time not available
-    }
-
-    // Get full weekday name
-    char fullDay[10]; // Buffer for full day name
-    strftime(fullDay, sizeof(fullDay), "%A", &timeinfo);
-
-    // Extract first n characters
-    char dayPrefix[n + 1];
-    strncpy(dayPrefix, fullDay, n);
-    dayPrefix[n] = '\0'; // Null-terminate the string
-
-    return String(dayPrefix);
-}
-
-// Function to get the first n characters of the month
-String SplitFlapWebServer::getMonthPrefix(int n) {
-    struct tm timeinfo;
-    if (! getLocalTime(&timeinfo)) {
-        return "Err"; // Return error if time not available
-    }
-
-    // Get full month name
-    char fullMonth[10]; // Buffer for full month name
-    strftime(fullMonth, sizeof(fullMonth), "%B", &timeinfo);
-
-    // Extract first n characters
-    char monthPrefix[n + 1];
-    strncpy(monthPrefix, fullMonth, n);
-    monthPrefix[n] = '\0'; // Null-terminate the string
-
-    return String(monthPrefix);
-}
-
-String SplitFlapWebServer::getCurrentDay() {
-    struct tm timeinfo;
-    if (! getLocalTime(&timeinfo)) {
-        return "Err";                          // Return error if time is not available
-    }
-
-    char dayStr[3];                            // Buffer for the day number (max "31" + null terminator)
-    sprintf(dayStr, "%02d", timeinfo.tm_mday); // Format as two-digit string
-
-    return String(dayStr);
-}
-
-void SplitFlapWebServer::setMode(int targetMode) {
-    settings.putInt("mode", targetMode);
-}
-
-int SplitFlapWebServer::getMode() {
-    return settings.getInt("mode");
 }
 
 void SplitFlapWebServer::checkWiFi() {
@@ -264,6 +138,7 @@ bool SplitFlapWebServer::connectToWifi() {
         WiFi.setAutoReconnect(true);
         WiFi.persistent(true); // Saves Wi-Fi settings to flash memory
         WiFi.setSleep(false);
+        configTime(0, 0, "pool.ntp.org");
         Serial.println("Connected to Wi-Fi!");
         Serial.println("IP Address: http://" + WiFi.localIP().toString());
         return true;
@@ -390,6 +265,17 @@ void SplitFlapWebServer::startWebServer() {
             reconnect = true;
         }
 
+        if (json["contentUrl"].is<String>()) {
+            String contentUrl = json["contentUrl"].as<String>();
+            if (! contentUrl.isEmpty() && ! contentUrl.startsWith("http://") && ! contentUrl.startsWith("https://")) {
+                response["message"] = "Content URL must start with http:// or https://";
+                response["type"] = "error";
+                response["errors"]["key"] = "contentUrl";
+                response["errors"]["message"] = response["message"];
+                return request->send(400, "application/json", response.as<String>());
+            }
+        }
+
         if (! settings.fromJson(json)) {
             response["message"] = "Failed to save settings";
             response["type"] = "error";
@@ -408,75 +294,6 @@ void SplitFlapWebServer::startWebServer() {
         this->attemptReconnect = reconnect;
     }
     ));
-
-    server
-        .addHandler(new AsyncCallbackJsonWebHandler("/text", [this](AsyncWebServerRequest *request, JsonVariant &json) {
-        if (request->method() != HTTP_POST) {
-            return request->send(405, "application/json", "{\"error\":\"Method Not Allowed\"}");
-        }
-
-        Serial.println("Received text update request");
-        Serial.println(json.as<String>());
-
-        // {"mode":"single","words":["adfasdf"],"delay":1,"center":false}
-        // {"mode":"multiple","words":["asdf","asdfasdf","fffff"],"delay":"14","center":true}
-        JsonDocument response;
-
-        if (! json["mode"].is<String>()) {
-            response["message"] = "Invalid mode type";
-        }
-
-        if (! json["words"].is<JsonArray>() || json["words"].as<JsonArray>().size() == 0) {
-            response["message"] = "Invalid words array";
-        }
-
-        float delay = json["delay"].as<float>();
-        if (delay < 1) {
-            response["message"] = "Invalid delay type / value";
-        }
-
-        if (! json["center"].is<bool>()) {
-            response["message"] = "Invalid center type";
-        }
-
-        if (response["message"].is<String>()) {
-            response["type"] = "error";
-            return request->send(400, "application/json", response.as<String>());
-        }
-
-        this->setMultiDelay(delay * 1000);
-        Serial.println("Delay: " + String(this->getMultiWordDelay()));
-
-        centering = json["center"].as<bool>() ? 1 : 0;
-        Serial.println("centering: " + String(centering ? "true" : "false"));
-
-        if (json["mode"] == "single") {
-            String word = json["words"][0].as<String>();
-            Serial.println("Single Word: " + word);
-            this->setInputString(word);
-            this->setMode(0); // change mode last once all variables updated
-        }
-
-        if (json["mode"] == "multiple") {
-            JsonArray wordsArray = json["words"].as<JsonArray>();
-            this->multiInputStrings.clear();
-            this->multiInputStrings.reserve(wordsArray.size());
-            for (JsonVariant v : wordsArray) {
-                this->multiInputStrings.push_back(v.as<String>());
-            }
-
-            this->numMultiWords = wordsArray.size();
-            this->multiWordCurrentIndex = 0;
-            Serial.println("Number of Words: " + String(this->numMultiWords));
-
-            this->setMode(1);
-        }
-
-        response["message"] = "Text updated successfully!";
-        response["type"] = "success";
-
-        request->send(200, "application/json", response.as<String>());
-    }));
 
     server.onNotFound(fourOhFour);
 

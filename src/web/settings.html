@@ -87,56 +87,6 @@
                 x-text="errors.message"
             ></div>
 
-            <label for="timezone" class="block text-left text-lg mt-4"
-                >Timezone</label
-            >
-            <div class="relative w-full mt-2">
-                <select
-                    class="w-full p-3 text-lg border border-gray-600 rounded-md text-center bg-gray-700 text-gray-100"
-                    x-model="settings.timezone"
-                    id="timezone"
-                >
-                    <template x-for="(name, zone) in timezones" :key="zone">
-                        <option
-                            :value="zone"
-                            x-text="zone"
-                            :selected="zone === settings.timezone"
-                        ></option>
-                    </template>
-                </select>
-                <div
-                    x-show="loading.timezones"
-                    class="absolute inset-0 flex justify-center items-center rounded-md"
-                >
-                    <svg
-                        class="animate-spin h-5 w-5 text-gray-100"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                    >
-                        <circle
-                            class="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            stroke-width="4"
-                        ></circle>
-                        <path
-                            class="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                        ></path>
-                    </svg>
-                </div>
-            </div>
-            <div
-                class="w-full p-3 mt-2 text-sm text-white bg-red-500 rounded-md"
-                x-cloak
-                x-show="errors.key === 'timezone'"
-                x-text="errors.message"
-            ></div>
-
             <h2
                 class="text-xl font-semibold text-left w-full border-b border-gray-600 pb-2 mt-6 mb-4"
             >
@@ -425,38 +375,10 @@
         <script>
             document.addEventListener("alpine:init", () => {
                 Alpine.data("settings", () => ({
-                    loading: {
-                        timezones: true,
-                    },
-
                     saving: false,
 
                     get processing() {
-                        return (
-                            this.loading.settings ||
-                            this.loading.timezones ||
-                            this.saving
-                        );
-                    },
-
-                    timezones: {},
-
-                    init() {
-                        this.loadTimezones();
-                    },
-
-                    loadTimezones() {
-                        fetch("/timezones.json")
-                            .then((response) => response.json())
-                            .then((data) => (this.timezones = data))
-                            .catch((error) =>
-                                this.showDialog(
-                                    "Failed to load timezones. Refresh the page.",
-                                    "error",
-                                    true,
-                                ),
-                            )
-                            .finally(() => (this.loading.timezones = false));
+                        return this.loading.settings || this.saving;
                     },
 
                     save() {

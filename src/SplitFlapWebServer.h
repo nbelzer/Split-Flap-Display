@@ -9,14 +9,11 @@
 #include <ESPmDNS.h>
 #include <LittleFS.h>
 #include <WiFi.h>
-#include <time.h>
-#include <vector>
 
 class SplitFlapWebServer {
   public:
     SplitFlapWebServer(JsonSettings &settings);
     void init();
-    void setTimezone();
     void checkRebootRequired();
 
     // Wifi Connectivity
@@ -35,63 +32,16 @@ class SplitFlapWebServer {
     void setLastCheckWifiTime(unsigned long input) { lastCheckWifiTime = input; }
     int getWifiCheckInterval() { return wifiCheckInterval; }
 
-    // Mode
-    int getMode();
     bool consumeHomingRequest() {
         bool requested = homingRequested;
         homingRequested = false;
         return requested;
     }
 
-    // Mode 0 - Single String
-    String getInputString() const { return inputString; }
-    String getWrittenString() const { return writtenString; }
-    void setWrittenString(String input) { writtenString = input; }
-
-    // Mode 1, Multi Input
-    String getMultiInputString(int index) const { return multiInputStrings[index]; }
-    int getMultiWordDelay() const { return multiWordDelay; }
-    unsigned long getLastSwitchMultiTime() { return lastSwitchMultiTime; }
-    void setLastSwitchMultiTime(unsigned long input) { lastSwitchMultiTime = input; }
-    int getMultiWordCurrentIndex() { return multiWordCurrentIndex; }
-    void setMultiWordCurrentIndex(int input) { multiWordCurrentIndex = input; }
-    int getNumMultiWords() const { return numMultiWords; }
-
-    // Mode 2, Date
-    // Function to get current minute as a string
-    String getCurrentMinute();
-    String getCurrentHour();
-    String getDayPrefix(int n);
-    String getMonthPrefix(int n);
-    String getCurrentDay();
-    unsigned long getLastCheckDateTime() { return lastCheckDateTime; }
-    void setLastCheckDateTime(unsigned long input) { lastCheckDateTime = input; }
-    int getDateCheckInterval() { return checkDateInterval; }
-
-    int getCentering() { return centering; }
-
   private:
     JsonSettings &settings;
 
-    void setInputString(String input) { inputString = input; }
-
-    void setMode(int targetMode);
-    void setMultiDelay(int input) { multiWordDelay = input; }
-
-    unsigned long lastCheckDateTime;
-    int checkDateInterval;
-
     int connectionMode; // 0 is AP mode, 1 is Internet Mode
-    int centering;      // whether to center text from custom imput
-
-    int numMultiWords;
-    unsigned long lastSwitchMultiTime;
-    int multiWordDelay;
-    int multiWordCurrentIndex;
-    std::vector<String> multiInputStrings; // latest multi inputs from user
-
-    String inputString;      // latest single input from user
-    String writtenString;    // string for whatever is currently written to the display
 
     bool rebootRequired;
     bool attemptReconnect;
