@@ -51,15 +51,37 @@ void SplitFlapDisplay::init() {
     Wire.begin(SDAPin, SCLPin);
     Wire.setClock(400000);
 
+    int connectedModules = 0;
+    for (uint8_t i = 0; i < MAX_MODULES; i++) {
+        moduleConnected[i] = false;
+    }
+    for (uint8_t i = 0; i < numModules; i++) {
+        moduleConnected[i] = modules[i].probe();
+        if (moduleConnected[i]) {
+            connectedModules++;
+        } else {
+            Serial.print("Module not found at I2C address 0x");
+            Serial.println(moduleAddresses[i], HEX);
+        }
+    }
+    Serial.print("Connected modules: ");
+    Serial.print(connectedModules);
+    Serial.print("/");
+    Serial.println(numModules);
+
     // Put every motor driver into its off state before running the slower
     // per-module initialization sequence. PCF8575 ports power up HIGH, so a
     // quick shutdown sweep minimizes simultaneous motor current at startup.
     for (uint8_t i = 0; i < numModules; i++) {
-        modules[i].stop();
+        if (moduleConnected[i]) {
+            modules[i].stop();
+        }
     }
 
     for (uint8_t i = 0; i < numModules; i++) {
-        modules[i].init();
+        if (moduleConnected[i]) {
+            modules[i].init();
+        }
     }
 }
 
@@ -231,11 +253,21 @@ void SplitFlapDisplay::calibrateAllModules(float timePerStep) {
     unsigned long lastStepTimes[MAX_MODULES] = {};
     unsigned long currentTime = micros();
     unsigned long lastSensorCheckTime = currentTime;
-    int modulesAwaitingMagnet = numModules;
+    int modulesAwaitingMagnet = 0;
 
     for (int i = 0; i < numModules; i++) {
+        if (! moduleConnected[i]) {
+            calibrated[i] = true;
+            continue;
+        }
         lastStepTimes[i] = currentTime;
         modules[i].start();
+        modulesAwaitingMagnet++;
+    }
+
+    if (modulesAwaitingMagnet == 0) {
+        Serial.println("No connected modules to calibrate");
+        return;
     }
 
     delay(startStopDelayMs);
@@ -292,7 +324,9 @@ void SplitFlapDisplay::calibrateAllModules(float timePerStep) {
 
     delay(startStopDelayMs);
     for (int i = 0; i < numModules; i++) {
-        modules[i].stop();
+        if (moduleConnected[i]) {
+            modules[i].stop();
+        }
     }
 }
 
@@ -324,6 +358,9 @@ void SplitFlapDisplay::moveAllModulesTo(int targetPositions[], float timePerStep
     int movingModules = 0;
 
     for (int i = 0; i < numModules; i++) {
+        if (! moduleConnected[i]) {
+            continue;
+        }
         if (modules[i].getPosition() == targetPositions[i]) {
             continue;
         }

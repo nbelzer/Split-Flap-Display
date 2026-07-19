@@ -46,6 +46,7 @@ class SplitFlapDisplay {
     int numModules;
     uint8_t moduleAddresses[MAX_MODULES];
     SplitFlapModule modules[MAX_MODULES];
+    bool moduleConnected[MAX_MODULES] = {};
     int moduleOffsets[MAX_MODULES];
     int displayOffset;
 

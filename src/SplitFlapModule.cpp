@@ -50,6 +50,13 @@ bool SplitFlapModule::writeIO(uint16_t data) {
     return error == 0;
 }
 
+bool SplitFlapModule::probe() {
+    Wire.beginTransmission(address);
+    byte error = Wire.endTransmission();
+    hasErrored = error != 0;
+    return error == 0;
+}
+
 // Init Module, Setup IO Board
 void SplitFlapModule::init() {
     float stepSize = (float) stepsPerRot / (float) numChars;

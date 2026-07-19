@@ -15,6 +15,7 @@ class SplitFlapModule {
     void step(bool updatePosition = true);                   // step motor
     void stop();                                             // write all motor input pins to low
     void start();                                            // re-energize coils to last position, not stepping motor
+    bool probe();                                            // check whether the I2C expander acknowledges
 
     int getMagnetPosition() const { return magnetPosition; } // position where magnet is detected
     int getCharPosition(const String &inputChar) const;       // get position for one UTF-8 display symbol
