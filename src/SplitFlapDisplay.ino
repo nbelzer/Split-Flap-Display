@@ -67,13 +67,7 @@ void setup() {
         webServer.startMDNS();
         webServer.startWebServer();
 
-        display.homeToString("");
-
-        if (display.getNumModules() == 8) {
-            display.writeString("Wifi Err");
-        } else {
-            display.writeChar("X");
-        }
+        display.homeWithRainbow();
     } else {
         webServer.enableOta();
         webServer.startMDNS();
@@ -82,11 +76,8 @@ void setup() {
         splitflapMqtt.setup();
         splitflapMqtt.setDisplay(&display);
         display.setMqtt(&splitflapMqtt);
-        display.homeToString("");
-
-        display.writeString("OK");
-        delay(250);
-        display.writeString("");
+        display.homeWithRainbow();
+        updateFromUrl();
     }
 }
 
@@ -101,12 +92,7 @@ void loop() {
         urlClient.requestRefresh();
     }
 
-    String content;
-    if (urlClient.fetchIfDue(content)) {
-        // Treat the response as positional display text. writeString handles
-        // UTF-8 symbols and truncates it to the configured module count.
-        display.writeString(content, MAX_RPM, false);
-    }
+    updateFromUrl();
 
     webServer.handleOta();
     checkConnection();
@@ -115,6 +101,15 @@ void loop() {
 
     webServer.checkRebootRequired();
     yield();
+}
+
+void updateFromUrl() {
+    String content;
+    if (urlClient.fetchIfDue(content)) {
+        // Treat the response as positional display text. writeString handles
+        // UTF-8 symbols and truncates it to the configured module count.
+        display.writeString(content, MAX_RPM, false);
+    }
 }
 
 void checkConnection() {
@@ -134,7 +129,6 @@ void reconnectIfNeeded() {
             webServer.enableOta();
             webServer.endMDNS();
             webServer.startMDNS();
-            display.writeChar("X");
         } else {
             webServer.enableOta();
             webServer.endMDNS();

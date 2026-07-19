@@ -23,6 +23,7 @@ class SplitFlapDisplay {
                    float speed = MAX_RPM); // sets all modules to a single char
     void moveTo(int targetPositions[], float speed = MAX_RPM, bool releaseMotors = true);
     void home(float speed = MAX_RPM);      // move home
+    void homeWithRainbow();                // boot homing animation for the extended character set
     void homeToString(
         String homeString, float speed = MAX_RPM,
         bool centering = true
@@ -39,8 +40,8 @@ class SplitFlapDisplay {
   private:
     JsonSettings &settings;
 
-    void calibrateModules();
-    void calibrateAllModules(float timePerStep);
+    void calibrateModules(int targetPositions[] = nullptr);
+    void calibrateAllModules(float timePerStep, int targetPositions[] = nullptr);
     void moveAllModulesTo(int targetPositions[], float timePerStep, bool releaseMotors);
 
     int numModules;

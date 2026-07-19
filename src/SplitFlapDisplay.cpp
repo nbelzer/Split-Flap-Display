@@ -10,6 +10,10 @@ constexpr unsigned long MOVEMENT_SENSOR_CHECK_INTERVAL_US = 20 * 1000;
 constexpr int CALIBRATION_ACCURACY_STEPS = 4;
 constexpr int CALIBRATION_CONFIRMATION_SAMPLES = 2;
 constexpr float CALIBRATION_MAX_RPM = 10.0f;
+constexpr unsigned long BOOT_RAINBOW_HOLD_MS = 1000;
+
+// The blank symbol maps to the physical black flap in the 64-flap set.
+const char *const RAINBOW_CHARS[MAX_MODULES] = {" ", "⬜", "🟥", "🟧", "🟨", "🟩", "🟦", "🟪"};
 }
 
 SplitFlapDisplay::SplitFlapDisplay(JsonSettings &settings) : settings(settings) {}
@@ -151,6 +155,22 @@ void SplitFlapDisplay::home(float speed) {
     moveTo(targetPositions, speed);
 }
 
+void SplitFlapDisplay::homeWithRainbow() {
+    if (charSetSize != 64) {
+        home();
+        return;
+    }
+
+    Serial.println("Homing with rainbow");
+    int targetPositions[MAX_MODULES] = {};
+    for (int i = 0; i < numModules; i++) {
+        targetPositions[i] = modules[i].getCharPosition(RAINBOW_CHARS[i]);
+    }
+
+    calibrateModules(targetPositions);
+    delay(BOOT_RAINBOW_HOLD_MS);
+}
+
 void SplitFlapDisplay::homeToString(String homeString, float speed, bool centering) {
     Serial.println("Homing");
     calibrateModules();
@@ -228,7 +248,7 @@ void SplitFlapDisplay::writeString(String inputString, float speed, bool centeri
     }
 }
 
-void SplitFlapDisplay::calibrateModules() {
+void SplitFlapDisplay::calibrateModules(int targetPositions[]) {
     // Split the four-step accuracy budget across the samples required to
     // confirm a sensor transition. At 2048 steps this derives 11.72 RPM, then
     // caps at 10 RPM to leave timing and I2C overhead margin.
@@ -240,20 +260,22 @@ void SplitFlapDisplay::calibrateModules() {
     float stepsPerSecond = (speed / 60.0f) * stepsPerRot;
     float timePerStep = 1000000 / stepsPerSecond;
 
-    calibrateAllModules(timePerStep);
+    calibrateAllModules(timePerStep, targetPositions);
 }
 
-void SplitFlapDisplay::calibrateAllModules(float timePerStep) {
+void SplitFlapDisplay::calibrateAllModules(float timePerStep, int targetPositions[]) {
     const int startStopDelayMs = 200;
 
     bool calibrated[MAX_MODULES] = {};
+    bool targetReached[MAX_MODULES] = {};
     bool sensorArmed[MAX_MODULES] = {};
     uint8_t consecutiveLowSamples[MAX_MODULES] = {};
     uint8_t consecutiveHighSamples[MAX_MODULES] = {};
     unsigned long lastStepTimes[MAX_MODULES] = {};
     unsigned long currentTime = micros();
     unsigned long lastSensorCheckTime = currentTime;
-    int modulesAwaitingMagnet = 0;
+    int connectedModules = 0;
+    int modulesInProgress = 0;
 
     for (int i = 0; i < numModules; i++) {
         if (! moduleConnected[i]) {
@@ -262,10 +284,11 @@ void SplitFlapDisplay::calibrateAllModules(float timePerStep) {
         }
         lastStepTimes[i] = currentTime;
         modules[i].start();
-        modulesAwaitingMagnet++;
+        connectedModules++;
+        modulesInProgress++;
     }
 
-    if (modulesAwaitingMagnet == 0) {
+    if (connectedModules == 0) {
         Serial.println("No connected modules to calibrate");
         return;
     }
@@ -275,13 +298,25 @@ void SplitFlapDisplay::calibrateAllModules(float timePerStep) {
     // There is intentionally no rotation or time limit here. A module with a
     // missed or failed sensor keeps revolving, making the failure visible
     // instead of silently continuing with an uncalibrated position.
-    while (modulesAwaitingMagnet > 0) {
+    while (modulesInProgress > 0) {
         currentTime = micros();
 
         for (int i = 0; i < numModules; i++) {
-            if (! calibrated[i] && (currentTime - lastStepTimes[i]) > timePerStep) {
+            if (! moduleConnected[i] || targetReached[i] || (currentTime - lastStepTimes[i]) <= timePerStep) {
+                continue;
+            }
+
+            if (! calibrated[i]) {
                 modules[i].step();
                 lastStepTimes[i] = micros();
+            } else if (targetPositions != nullptr) {
+                modules[i].step();
+                lastStepTimes[i] = micros();
+                if (modules[i].getPosition() == targetPositions[i]) {
+                    targetReached[i] = true;
+                    modulesInProgress--;
+                    modules[i].stop();
+                }
             }
         }
 
@@ -311,7 +346,14 @@ void SplitFlapDisplay::calibrateAllModules(float timePerStep) {
                     if (consecutiveHighSamples[i] >= CALIBRATION_CONFIRMATION_SAMPLES) {
                         modules[i].magnetDetected();
                         calibrated[i] = true;
-                        modulesAwaitingMagnet--;
+                        if (targetPositions == nullptr) {
+                            targetReached[i] = true;
+                            modulesInProgress--;
+                        } else if (modules[i].getPosition() == targetPositions[i]) {
+                            targetReached[i] = true;
+                            modulesInProgress--;
+                            modules[i].stop();
+                        }
                     }
                 } else {
                     consecutiveHighSamples[i] = 0;
