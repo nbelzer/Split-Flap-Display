@@ -64,10 +64,6 @@ void setup() {
 
     display.init();
 
-#ifdef STARTUP_DELAY
-    delay(STARTUP_DELAY);
-#endif
-
     Serial.println("Init Web Server");
     webServer.init();
 
@@ -149,9 +145,6 @@ void reconnectIfNeeded() {
             webServer.enableOta();
             webServer.endMDNS();
             webServer.startMDNS();
-            display.writeString("OK");
-            delay(500);
-            display.writeString("");
             urlClient.requestRefresh();
         }
 

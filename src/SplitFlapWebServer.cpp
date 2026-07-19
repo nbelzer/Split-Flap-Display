@@ -9,6 +9,8 @@
 
 namespace {
 constexpr uint16_t WIFI_LISTEN_INTERVAL = 5;
+constexpr uint8_t MDNS_START_ATTEMPTS = 3;
+constexpr unsigned long MDNS_RETRY_DELAY_MS = 250;
 }
 
 #ifndef WIFI_SSID
@@ -189,14 +191,24 @@ void SplitFlapWebServer::endMDNS() {
 }
 
 void SplitFlapWebServer::startMDNS() {
-    if (! MDNS.begin(settings.getString("mdns").c_str())) {
-        Serial.println("Error setting up MDNS responder!");
-        while (1) {
-            delay(1000);
+    for (uint8_t attempt = 1; attempt <= MDNS_START_ATTEMPTS; attempt++) {
+        if (MDNS.begin(settings.getString("mdns").c_str())) {
+            Serial.println("mDNS: http://" + settings.getString("mdns") + ".local");
+            return;
+        }
+
+        Serial.print("Error setting up mDNS responder (attempt ");
+        Serial.print(attempt);
+        Serial.print("/");
+        Serial.print(MDNS_START_ATTEMPTS);
+        Serial.println(")");
+
+        if (attempt < MDNS_START_ATTEMPTS) {
+            delay(MDNS_RETRY_DELAY_MS);
         }
     }
 
-    Serial.println("mDNS: http://" + settings.getString("mdns") + ".local");
+    Serial.println("Continuing without mDNS");
 }
 
 void SplitFlapWebServer::startWebServer() {

@@ -70,20 +70,6 @@ void SplitFlapModule::init() {
     writeIO(initState);
 
     stop();                                  // Write all motor coil inputs LOW
-
-    int initDelay = 100;
-
-    delay(initDelay);
-    step();
-    delay(initDelay);
-    step();
-    delay(initDelay);
-    step();
-    delay(initDelay);
-    step();
-    delay(initDelay);
-
-    stop();
 }
 
 int SplitFlapModule::getCharPosition(const String &inputChar) const {
