@@ -4,6 +4,14 @@
 #include "SplitFlapModule.h"
 #include "SplitFlapMqtt.h"
 
+namespace {
+constexpr unsigned long CALIBRATION_SENSOR_CHECK_INTERVAL_US = 5 * 1000;
+constexpr unsigned long MOVEMENT_SENSOR_CHECK_INTERVAL_US = 20 * 1000;
+constexpr int CALIBRATION_ACCURACY_STEPS = 4;
+constexpr int CALIBRATION_CONFIRMATION_SAMPLES = 2;
+constexpr float CALIBRATION_MAX_RPM = 10.0f;
+}
+
 SplitFlapDisplay::SplitFlapDisplay(JsonSettings &settings) : settings(settings) {}
 
 void SplitFlapDisplay::init() {
@@ -111,14 +119,10 @@ void SplitFlapDisplay::testCount() {
 
 void SplitFlapDisplay::home(float speed) {
     Serial.println("Homing");
+    calibrateModules();
+
     int targetPositions[numModules];
-    for (int i = 0; i < numModules; i++) {
-        targetPositions[i] = (modules[i].getPosition() - 1 + stepsPerRot) % stepsPerRot;
-    }
-    startMotors();
-    moveTo(targetPositions, speed, false);
     char homeChar = ' ';
-    int charPosition;
     for (int i = 0; i < numModules; i++) {
         targetPositions[i] = modules[i].getCharPosition(homeChar);
     }
@@ -127,28 +131,19 @@ void SplitFlapDisplay::home(float speed) {
 
 void SplitFlapDisplay::homeToString(String homeString, float speed, bool centering) {
     Serial.println("Homing");
-    int targetPositions[numModules];
-    for (int i = 0; i < numModules; i++) {
-        targetPositions[i] = (modules[i].getPosition() - 1 + stepsPerRot) % stepsPerRot;
-    }
-    startMotors();
-    moveTo(targetPositions, speed, false);
+    calibrateModules();
     writeString(homeString, speed, centering);
 }
 
 void SplitFlapDisplay::homeToChar(char homeChar, float speed) {
     Serial.println("Homing");
-    int targetPositions[numModules];
-    for (int i = 0; i < numModules; i++) {
-        targetPositions[i] = (modules[i].getPosition() - 1 + stepsPerRot) % stepsPerRot;
-    }
-    startMotors();
-    moveTo(targetPositions, speed, false);
+    calibrateModules();
 
+    int targetPositions[numModules];
     for (int i = 0; i < numModules; i++) {
         targetPositions[i] = modules[i].getCharPosition(homeChar);
     }
-    moveTo(targetPositions, true, speed);
+    moveTo(targetPositions, speed);
 }
 
 void SplitFlapDisplay::writeChar(char inputChar, float speed) {
@@ -213,116 +208,188 @@ void SplitFlapDisplay::writeString(String inputString, float speed, bool centeri
     }
 }
 
-void SplitFlapDisplay::moveTo(int targetPositions[], float speed, bool releaseMotors) {
-    // TODO check length of array and return if empty
+void SplitFlapDisplay::calibrateModules() {
+    // Split the four-step accuracy budget across the samples required to
+    // confirm a sensor transition. At 2048 steps this derives 11.72 RPM, then
+    // caps at 10 RPM to leave timing and I2C overhead margin.
+    float stepsPerPoll =
+        (float) CALIBRATION_ACCURACY_STEPS / CALIBRATION_CONFIRMATION_SAMPLES;
+    float speed = (stepsPerPoll * 60.0f * 1000000.0f) /
+        (stepsPerRot * CALIBRATION_SENSOR_CHECK_INTERVAL_US);
+    speed = min(speed, min(maxVel, CALIBRATION_MAX_RPM));
+    float stepsPerSecond = (speed / 60.0f) * stepsPerRot;
+    float timePerStep = 1000000 / stepsPerSecond;
 
+    calibrateAllModules(timePerStep);
+}
+
+void SplitFlapDisplay::calibrateAllModules(float timePerStep) {
+    const int startStopDelayMs = 200;
+
+    bool calibrated[MAX_MODULES] = {};
+    bool sensorArmed[MAX_MODULES] = {};
+    uint8_t consecutiveLowSamples[MAX_MODULES] = {};
+    uint8_t consecutiveHighSamples[MAX_MODULES] = {};
+    unsigned long lastStepTimes[MAX_MODULES] = {};
+    unsigned long currentTime = micros();
+    unsigned long lastSensorCheckTime = currentTime;
+    int modulesAwaitingMagnet = numModules;
+
+    for (int i = 0; i < numModules; i++) {
+        lastStepTimes[i] = currentTime;
+        modules[i].start();
+    }
+
+    delay(startStopDelayMs);
+
+    // There is intentionally no rotation or time limit here. A module with a
+    // missed or failed sensor keeps revolving, making the failure visible
+    // instead of silently continuing with an uncalibrated position.
+    while (modulesAwaitingMagnet > 0) {
+        currentTime = micros();
+
+        for (int i = 0; i < numModules; i++) {
+            if (! calibrated[i] && (currentTime - lastStepTimes[i]) > timePerStep) {
+                modules[i].step();
+                lastStepTimes[i] = micros();
+            }
+        }
+
+        if ((currentTime - lastSensorCheckTime) >= CALIBRATION_SENSOR_CHECK_INTERVAL_US) {
+            for (int i = 0; i < numModules; i++) {
+                if (calibrated[i]) {
+                    continue;
+                }
+
+                bool sensorHigh;
+                if (! modules[i].readHallEffectSensor(sensorHigh)) {
+                    continue;
+                }
+
+                if (! sensorArmed[i]) {
+                    if (! sensorHigh) {
+                        consecutiveLowSamples[i]++;
+                        if (consecutiveLowSamples[i] >= CALIBRATION_CONFIRMATION_SAMPLES) {
+                            sensorArmed[i] = true;
+                            consecutiveHighSamples[i] = 0;
+                        }
+                    } else {
+                        consecutiveLowSamples[i] = 0;
+                    }
+                } else if (sensorHigh) {
+                    consecutiveHighSamples[i]++;
+                    if (consecutiveHighSamples[i] >= CALIBRATION_CONFIRMATION_SAMPLES) {
+                        modules[i].magnetDetected();
+                        calibrated[i] = true;
+                        modulesAwaitingMagnet--;
+                    }
+                } else {
+                    consecutiveHighSamples[i] = 0;
+                }
+            }
+            lastSensorCheckTime = currentTime;
+            yield();
+        }
+    }
+
+    delay(startStopDelayMs);
+    for (int i = 0; i < numModules; i++) {
+        modules[i].stop();
+    }
+}
+
+void SplitFlapDisplay::moveTo(int targetPositions[], float speed, bool releaseMotors) {
     speed = constrain(speed, 2, maxVel);
     float stepsPerSecond = (speed / 60) * stepsPerRot;
     float timePerStep = 1000000 / stepsPerSecond;
-
-    unsigned long currentTime = micros();
-
-    int checkIntervalUs = 20 * 1000; // How often to check each modules hall effect sensor, less
-    // than 20ms causes issues with bouncing
-    int startStopDelay = 200; // time to wait to let motor realign itself to
-    // magnetic field on stop and start
-
-    bool resetLatches[numModules] = {}; // Initialize to false //start with latch on to prevent case where the
-    // motion starts with the magnet over the sensor
-    bool needsStepping[numModules] = {};             // Initialize to false; //modules that still require moving
-    unsigned long lastStepTimes[numModules] = {};    // Initialize to false; //track when each module was last stepped
-    unsigned long lastSensorCheckTime = currentTime; // track when we last read all the hall effect sensors
 
     for (int i = 0; i < numModules; i++) {
         targetPositions[i] = constrain(
             targetPositions[i],
             0,
             stepsPerRot - 1
-        ); // Constrain to avoid errors with incorrect inputs
-        resetLatches[i] = true;
-        lastStepTimes[i] = currentTime;
-        if (modules[i].getPosition() != targetPositions[i]) {
-            needsStepping[i] = true;
-        } else {
-            needsStepping[i] = false;
-        }
+        );
     }
 
-    startMotors(); // not sure if this helps or not, likely that it does not based
-    // on testing
-    delay(startStopDelay); // give the motor time to align to magnetic field
+    moveAllModulesTo(targetPositions, timePerStep, releaseMotors);
+}
 
-    bool isFinished = checkAllFalse(needsStepping, numModules);
-    while (! isFinished) {
+void SplitFlapDisplay::moveAllModulesTo(int targetPositions[], float timePerStep, bool releaseMotors) {
+    const int startStopDelayMs = 200;
+
+    bool needsStepping[MAX_MODULES] = {};
+    bool resetLatches[MAX_MODULES] = {};
+    bool startedMotors[MAX_MODULES] = {};
+    unsigned long lastStepTimes[MAX_MODULES] = {};
+    unsigned long currentTime = micros();
+    unsigned long lastSensorCheckTime = currentTime;
+    int movingModules = 0;
+
+    for (int i = 0; i < numModules; i++) {
+        if (modules[i].getPosition() == targetPositions[i]) {
+            continue;
+        }
+
+        needsStepping[i] = true;
+        resetLatches[i] = true; // Ignore a magnet already over the sensor at startup.
+        startedMotors[i] = true;
+        lastStepTimes[i] = currentTime;
+        movingModules++;
+        modules[i].start();
+    }
+
+    if (movingModules == 0) {
+        return;
+    }
+
+    delay(startStopDelayMs);
+
+    while (movingModules > 0) {
         currentTime = micros();
+
         for (int i = 0; i < numModules; i++) {
-            if (((currentTime - lastStepTimes[i]) > timePerStep) && needsStepping[i]) {
+            if (needsStepping[i] && (currentTime - lastStepTimes[i]) > timePerStep) {
                 modules[i].step();
                 lastStepTimes[i] = micros();
-                if (modules[i].getPosition() == targetPositions[i]) { // this module is not in the correct position,
-                    // requires stepping
+                if (modules[i].getPosition() == targetPositions[i]) {
                     needsStepping[i] = false;
+                    movingModules--;
                 }
             }
         }
 
-        if ((currentTime - lastSensorCheckTime) > checkIntervalUs) { // check hall effect sensor every checkIntervalMs
-            // check every modules sensor
+        if ((currentTime - lastSensorCheckTime) >= MOVEMENT_SENSOR_CHECK_INTERVAL_US) {
             for (int i = 0; i < numModules; i++) {
-                if (needsStepping[i] &&
-                    (modules[i].readHallEffectSensor() == true
-                    )) { // only check sensors where the module is still moving
+                if (! needsStepping[i]) {
+                    continue;
+                }
+
+                bool sensorHigh;
+                if (! modules[i].readHallEffectSensor(sensorHigh)) {
+                    continue;
+                }
+
+                if (sensorHigh) {
                     if (! resetLatches[i]) {
-                        // UNCOMMENTING THIS WILL PROBBALY MAKE THE MOTORS INACCURATE, DUE
-                        // TO TIME TAKEN TO PRINT
-                        //  Serial.print("Module: ");
-                        //  Serial.print(i);
-                        //  Serial.print(" Magnet Position: ");
-                        //  Serial.print(modules[i].getMagnetPosition());
-                        //  Serial.print(" Actual Position: ");
-                        //  Serial.print(modules[i].getPosition());
-                        //  Serial.print(" Error: ");
-                        //  Serial.println((modules[i].getMagnetPosition() -
-                        //  modules[i].getPosition()));
-                        modules[i].magnetDetected(); // update position to the modules
-                        // magnet position
+                        modules[i].magnetDetected();
                         resetLatches[i] = true;
                     }
-                } else if (resetLatches[i] == true) {
+                } else if (resetLatches[i]) {
                     resetLatches[i] = false;
                 }
             }
-            isFinished = checkAllFalse(needsStepping, numModules);
-            lastSensorCheckTime = currentTime; // recall micros because for loop may
-            // take a moment to execute
+            lastSensorCheckTime = currentTime;
+            yield();
         }
     }
+
     if (releaseMotors) {
-        delay(startStopDelay); // allow all motors time to settle
-        stopMotors();
-    }
-}
-
-bool SplitFlapDisplay::checkAllFalse(bool array[], int size) {
-    for (int i = 0; i < size; i++) {
-        if (array[i] == true) {
-            return false;              // As soon as a true value is found, return false
+        delay(startStopDelayMs);
+        for (int i = 0; i < numModules; i++) {
+            if (startedMotors[i]) {
+                modules[i].stop();
+            }
         }
-    }
-    return true;                       // All values were false
-}
-
-void SplitFlapDisplay::startMotors() { // Probably broken somewhere, not sure
-    // why, haven't looked
-    for (int i = 0; i < numModules; i++) {
-        modules[i].start();
-    }
-}
-
-void SplitFlapDisplay::stopMotors() {
-    // Serial.println("Stopping Motors");
-    for (int i = 0; i < numModules; i++) {
-        modules[i].stop();
     }
 }
 

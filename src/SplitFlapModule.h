@@ -21,8 +21,7 @@ class SplitFlapModule {
     int getPosition() const { return position; }             // get integer position
     int getCharsetSize() const { return numChars; }          // getter for charset size
 
-    bool readHallEffectSensor();                             // return the value read by the hall effect
-    // sensor
+    bool readHallEffectSensor(bool &sensorHigh);             // return false when the I2C read failed
     void magnetDetected() {
         position = magnetPosition;
     } // update position to magnetposition, called when magnet is detected
@@ -36,7 +35,7 @@ class SplitFlapModule {
     int stepsPerRot;                // number of steps per rotation
     bool hasErrored = false;        // flag to indicate if an error has occurred
 
-    void writeIO(uint16_t data);    // write to motor in pins
+    bool writeIO(uint16_t data);    // return whether the I2C write succeeded
 
     int magnetPosition;             // altered by offsets
     static const int motorPins[];   // Array of motor pins

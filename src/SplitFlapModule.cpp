@@ -31,7 +31,7 @@ SplitFlapModule::SplitFlapModule(
     numChars = (charsetSize == 48) ? 48 : 37;
 }
 
-void SplitFlapModule::writeIO(uint16_t data) {
+bool SplitFlapModule::writeIO(uint16_t data) {
     Wire.beginTransmission(address);
     Wire.write(data & 0xFF);        // Send lower byte
     Wire.write((data >> 8) & 0xFF); // Send upper byte
@@ -39,7 +39,6 @@ void SplitFlapModule::writeIO(uint16_t data) {
     byte error = Wire.endTransmission();
 
     if (error > 0 && ! hasErrored) {
-        hasErrored = true; // Set the error flag
         Serial.print("Error writing data to module ");
         Serial.print(address);
         Serial.print(", error code: ");
@@ -50,6 +49,9 @@ void SplitFlapModule::writeIO(uint16_t data) {
         // 3 = received NACK on transmit of data
         // 4 = other error
     }
+
+    hasErrored = error > 0;
+    return error == 0;
 }
 
 // Init Module, Setup IO Board
@@ -97,8 +99,12 @@ void SplitFlapModule::stop() {
 }
 
 void SplitFlapModule::start() {
-    stepNumber = (stepNumber + 3) % 4; // effectively take one off stepNumber
-    step(false);                       // write the "previous" step high again, in case turned off
+    // Re-energize the last physical coil phase without changing which phase
+    // the next counted step will use. Leaving stepNumber decremented makes the
+    // next step update position without actually advancing the motor.
+    stepNumber = (stepNumber + 3) % 4;
+    step(false);
+    stepNumber = (stepNumber + 1) % 4;
 }
 
 void SplitFlapModule::step(bool updatePosition) {
@@ -106,43 +112,43 @@ void SplitFlapModule::step(bool updatePosition) {
     switch (stepNumber) {
         case 0:
             stepState = 0b1111111111100111;
-            writeIO(stepState);
             break;
         case 1:
             stepState = 0b1111111111110011;
-            writeIO(stepState);
             break;
         case 2:
             stepState = 0b1111111111111001;
-            writeIO(stepState);
             break;
         case 3:
             stepState = 0b1111111111101101;
-            writeIO(stepState);
             break;
     }
-    if (updatePosition) {
+
+    bool writeSucceeded = writeIO(stepState);
+    if (updatePosition && writeSucceeded) {
         position = (position + 1) % stepsPerRot;
         stepNumber = (stepNumber + 1) % 4;
     }
 }
 
-bool SplitFlapModule::readHallEffectSensor() {
-    if (hasErrored) {
-        return false;
-    }
-
+bool SplitFlapModule::readHallEffectSensor(bool &sensorHigh) {
     uint8_t requestBytes = 2;
-    Wire.requestFrom(address, requestBytes);
-    // Make sure the data is available
-    if (Wire.available() == 2) {
+    uint8_t receivedBytes = Wire.requestFrom(address, requestBytes);
+    if (receivedBytes == requestBytes && Wire.available() >= requestBytes) {
         uint16_t inputState = 0;
 
         // Read the two bytes and combine them into a 16-bit value
         inputState = Wire.read();             // Read the lower byte
         inputState |= (Wire.read() << 8);     // Read the upper byte and shift it left
 
-        return (inputState & (1 << 15)) != 0; // If bit is 15, return HIGH, else LOW
+        sensorHigh = (inputState & (1 << 15)) != 0;
+        hasErrored = false;
+        return true;
     }
+
+    while (Wire.available()) {
+        Wire.read();
+    }
+    hasErrored = true;
     return false;
 }

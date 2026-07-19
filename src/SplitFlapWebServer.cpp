@@ -334,6 +334,7 @@ void SplitFlapWebServer::startWebServer() {
 
     server.on("/settings/reset", HTTP_POST, [this](AsyncWebServerRequest *request) {
         settings.reset();
+        this->homingRequested = true;
 
         JsonDocument response;
         response["message"] = "Settings reset successfully! Reconnect to the " + String(AP_SSID) + " network";
@@ -402,6 +403,7 @@ void SplitFlapWebServer::startWebServer() {
 
         request->send(200, "application/json", response.as<String>());
 
+        this->homingRequested = true;
         this->rebootRequired = rebootRequired;
         this->attemptReconnect = reconnect;
     }

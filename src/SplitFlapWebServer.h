@@ -36,6 +36,11 @@ class SplitFlapWebServer {
 
     // Mode
     int getMode();
+    bool consumeHomingRequest() {
+        bool requested = homingRequested;
+        homingRequested = false;
+        return requested;
+    }
 
     // Mode 0 - Single String
     String getInputString() const { return inputString; }
@@ -91,6 +96,7 @@ class SplitFlapWebServer {
 
     bool rebootRequired;
     bool attemptReconnect;
+    volatile bool homingRequested = false;
     unsigned long lastCheckWifiTime;
     int wifiCheckInterval;
     AsyncWebServer server; // Declare server as a class member

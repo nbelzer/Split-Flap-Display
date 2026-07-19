@@ -93,6 +93,14 @@ void setup() {
 void loop() {
     splitflapMqtt.loop();
 
+    if (webServer.consumeHomingRequest()) {
+        // Reload hardware-related settings before homing, then allow the
+        // active display mode to restore its text on the next loop pass.
+        display.init();
+        display.homeToString("");
+        webServer.setWrittenString("");
+    }
+
     // check what mode the display is in, this value is updated by the web server
     switch (webServer.getMode()) {
         case 0: singleInputMode(); break;
